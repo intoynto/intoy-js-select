@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "../src/select";
+
+html,
+body {
+    height: 100%;
+    @apply text-base;
+}
+
+#root {
+    @apply relative h-full;
+}

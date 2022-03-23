@@ -1,0 +1,309 @@
+@use 'sass:math';
+
+/** ====== coloring theme ========= **/
+
+.SelectBox { border:solid 1px rgb(230, 230, 230); }
+.Select.focus .SelectBox { border-color: #1B74E4; }
+
+.SelectInput {
+    min-height: 26px;
+    padding: 3px 0 3px 0; 
+}
+
+.Select.multiple {
+    .SelectLabel 
+    {
+        display: flex;
+        background-color: rgb(230, 230, 230);
+        border-radius: 3px;
+    }
+    .SelectLabelVal {
+        padding: 2px 3px 2px 6px;
+        border-radius: 2px;
+        color: rgb(51, 51, 51);
+        font-size: 85%;
+    }
+    .SelectLabelRem {
+        padding-left: 3px;
+        padding-right: 3px;
+        &:hover {
+            background-color: rgb(230,150,150,0.5);
+        }
+    }
+}
+
+
+.SelectArrow {
+    padding: 3px 5px;
+    background-color: rgb(240,240,240);
+    &:hover {
+        background-color: rgb(230,230,230);
+    }
+}
+
+.SelectArrowDropDown {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    &::after {
+        border-bottom: solid 2px black;
+        border-right: solid 2px black;
+    }
+}
+
+.SelectDropDown
+{
+    background-color: white;
+}
+
+.SelectItem {
+    padding: 3px 4px;
+    cursor: pointer;
+    &:hover, 
+    &.focus,
+    &.selected    
+    {
+        background-color: rgb(230,230,230);
+    }       
+}
+
+.SelectLoading {
+    &::after {
+        border: solid 1px transparent;
+        border-left-color: red;
+        border-right-color: red;
+    }
+}
+
+/** ============ end color theme ============  **/
+
+.Select
+{
+    position: relative;
+    z-index: 0;
+    select {
+        position: absolute;
+        height: 22px;
+        max-width: 22px;
+        display: none;
+    }
+}
+
+.SelectWrap {
+    position: relative;
+    display: grid;    
+    z-index: 0;
+}
+
+.SelectBox {
+    display: flex;
+    gap: 2px;    
+    border-radius: 3px;
+}
+
+.SelectControls {
+    flex: auto;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-left: 6px;
+}
+
+.SelectInput,.SelectInput:focus
+{
+    border: transparent;
+    box-shadow: none;
+    outline: none;
+    background: none;
+}
+
+.SelectInput {      
+    width: 1%;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+}
+
+
+.SelectLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.Select.single 
+{
+    .SelectLabelVal {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .SelectLabelRem {
+        display: none;
+    }
+    .SelectLabel {
+        position: absolute;
+        width: 100%;
+        opacity: 1;
+    }
+    .SelectInput {
+        flex: auto;
+    }
+}
+
+.Select.multiple 
+{
+    .SelectControls
+    {
+        flex-wrap: wrap;
+        gap: 2px;
+        flex: 1 1 0%;
+        box-sizing: border-box;
+    }   
+    .SelectLabel 
+    {
+        position: relative;
+        box-sizing: border-box;
+        white-space: normal;
+    }
+    .SelectLabelVal 
+    {        
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    .SelectLabelRem 
+    {        
+        cursor: pointer;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+    }
+    
+    .SelectInput {
+        flex: auto;
+    }
+}
+
+.SelectArrows {
+    display: flex
+}
+
+.SelectArrow {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.SelectArrowDropDown {
+    position: relative;
+    width: 20px;
+    
+    &::after{
+        position: absolute;
+        content: "";
+        display: block;
+        height: 6px;
+        width: 6px;
+        transform-origin: 66% 66%;
+        transform: rotate(45deg);
+        margin-top: -3px;
+        margin-right: -3px;
+        right: 50%;
+        top: 50%;
+        transition: all .15s ease-in-out;
+    }
+}
+
+.SelectDropBox {
+    position: relative;
+}
+
+.SelectDropDown {
+    @apply border;
+    position: absolute;
+    min-height: 26px;
+    max-height: 150px;
+    margin-top: 10px;
+    overflow-y: auto;
+    width: 100%;
+    top: 100%; 
+    left: 0;
+    transform-origin: 50% 0;
+    transform: scale(1) translateY(- math.div(-26px, 2));
+    transition: all .2s cubic-bezier(0.5, 0, 0, 1.25), opacity .15s ease-out;
+    border-radius: 3px;
+    opacity: 0;
+    visibility: hidden;
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+}
+
+.Select.focus 
+{
+    z-index: 1;
+    .SelectDropDown 
+    {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: scale(1) translateY(0);
+    }
+    .SelectArrowDropDown::after {
+        transform: rotate(-135deg);
+    }
+    .SelectLabel {
+        opacity: 0;
+    }      
+}
+
+.Select.focus .SelectInput,
+.Select.multiple .SelectInput,
+.SelectInput.withPlaceholder
+{
+    opacity: 1;
+}
+
+.Select.single.focus .SelectPlaces {
+    opacity: 0;
+}
+
+.Select.multiple.focus .SelectLabel {
+    opacity: 1;
+}
+
+.SelectLoading {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    &:after {
+        content: "\0020";
+        position: absolute;
+        border-radius: 50%;
+        top: 50%;
+        left: 8px;
+        width: 18px;
+        height: 18px;
+        margin-top: -9px;        
+        animation:SelectSpinner 0.5s linear infinite
+    }
+}
+
+@keyframes SelectSpinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(380deg);
+    }
+    100% {
+        transform: rotate(720deg);
+    }
+}

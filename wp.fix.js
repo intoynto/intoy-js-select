@@ -33,5 +33,7 @@ async function toDelDir(src)
     }
 }
 
-toCopyDir('dist/src/','dist/');
-toDelDir('dist/src');
+//toCopyDir('dist/src/','dist/');
+//toCopyFile('src/_select.scss','dist/_select.scss');
+//toDelDir('dist/src');
+//toDelDir('dist/_test');

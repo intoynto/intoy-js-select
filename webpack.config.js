@@ -25,10 +25,13 @@ module.exports=function(env,args)
                 "react-dom": "preact/compat"
             } 
         },
+        
         externals:{
             "react":"react",
-            "react-dom":"react-dom"
-        },
+            "react-dom":"react-dom",
+            "intoy-base":"intoy-base",
+            "intoy-xhr":"intoy-xhr",
+        },        
         plugins:[
             new CleanWebpackPlugin(),    
         ],
@@ -63,6 +66,6 @@ module.exports=function(env,args)
         }
     };
     conf.entry={};
-    conf.entry[`${dev.MODUL_NAME}`]=path.resolve(__dirname,"src/index.ts");
+    conf.entry[`${dev.MODUL_NAME}`]=path.resolve(__dirname,"src/index.tsx");
     return conf;
 };

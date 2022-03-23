@@ -18,7 +18,13 @@
         "strict": true,
         "esModuleInterop": true,
         "outDir": "./dist",
-        "rootDir": ".",
         "jsx": "react",
-    }  
+    },
+    "include": [
+        "./src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "./test/**/*"
+    ]
 }
