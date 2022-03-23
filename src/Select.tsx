@@ -626,19 +626,13 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         const sama=satu && dua && tiga && empat;
         if(!sama)
         {
-            console.log("Emiter #1");
             if(!satu || !dua || !tiga)
             {
-                console.log("Emiter #2");
                 this.prepValues();
                 this.prepOptions();
                 this.prepPlaces();
-                this.emit();
-            }
-            else {
-                console.log("Emiter #3");
-                this.forceUpdate();
-            }
+            }            
+            this.emit();
             return;
         }
         this.updateCtrSize();
