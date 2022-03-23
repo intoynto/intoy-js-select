@@ -18,3 +18,7 @@ yarn-error.log
 
 # Gatsby files
 .cache/
+
+
+# other file
+.noinfo
