@@ -1,6 +1,6 @@
 {
   "name": "intoy-select",
-  "version": "0.0.0-beta-0.0.0.6",
+  "version": "0.0.0-beta-0.0.0.7",
   "description": "Nice Pure Select",
   "main": "dist/select.js",
   "typings": "dist/index.d.ts",
