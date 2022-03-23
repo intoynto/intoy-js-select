@@ -144,9 +144,11 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             {
                 const iof=this.valueRef.indexOf(this.values[i]);
                 const ops:Igen=this.options[iof];
-                console.log("casthing iof ",iof,"ops",ops);
-                this.places.push(this.rdrPlace({dngH:ops.__label_,multiple,dataValue:ops.__id_})); 
-                if(!this.isMultiple(props)) break;
+                if(iof>=0 && ops)
+                {
+                    this.places.push(this.rdrPlace({dngH:ops.__label_,multiple,dataValue:ops.__id_})); 
+                    if(!this.isMultiple(props)) break;
+                }
             }
         }
     }
