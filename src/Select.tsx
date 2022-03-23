@@ -93,12 +93,15 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     protected ndTgRem:any=null;
     protected search:string='';
 
+    private _cselops:number=0;
+
     constructor(props:P)
     {
         super(props);        
         this.state=this.gInitState(props);
         this.prepValues(props);
         this.prepOptions(props);
+        this.prepItems(props);
         this.prepPlaces(props);        
     }
 
@@ -222,22 +225,51 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         this.dropItems.push(<li onClick={this.onItemClick} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
     }
 
-    protected prepItems=()=>
+    protected optionPush=(gen:Igen,props?:P)=>
     {
-        this.dropItems=[];
+        const is_true=gen && gen.__id_!==undefined && gen.__id_!==null;
+        if(is_true)
+        {
+            const multi=this.isMultiple(props);
+            if(!multi && this.selectOptions.length<1)
+            {
+                //push empty option value
+                //this.selectOptions.push(<option/>);
+            }
+
+            const selected=(!multi && this._cselops<1) && this.values.indexOf(gen.__id_)>=0;
+            let optionProps:any={
+                value:gen.__id_,
+            };
+
+            if(selected)
+            {
+                optionProps.selected=true;
+                this._cselops++;
+            }
+            this.selectOptions.push(<option {...optionProps}>{stripHtmlTags(gen.__label_)}</option>); 
+        }
+    }    
+
+
+    // re-items dropDown dan Select<option>
+    protected prepItems=(props?:P)=>
+    {
+        this.dropItems=[]; //clear dropdown items
+        this.selectOptions=[]; //clear select options
+        this._cselops=0; // reset count selected options
         this.options.forEach((gen:any)=>{
-            this.itemsPush(gen);
+            this.optionPush(gen,props) // add option in select
+            this.itemsPush(gen,props); //add drop down item
         });
     }
 
+    // untuk mengambil property options dari props
     protected prepOptions=(props?:P)=>
     {
         props=props||this.props;
         this.options=[];
         this.valueRef=[];
-        this.selectOptions=[]; //clear select options
-        this.dropItems=[];
-        const multi=this.isMultiple(props);
         if(Array.isArray(props.options) && props.options.length>0)
         {
             let fieldid=toStr(props.fieldid).toString().trim();
@@ -245,7 +277,6 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             fieldid=fieldid.length<1?"id":fieldid;
             fieldname=fieldname.length<1?fieldid:fieldname;
             const dataKeys:any=[];
-            let selectedCount:number=0;
             for(let i=0; i<props.options.length; i++)
             {
                 const o:any=props.options[i];
@@ -279,20 +310,11 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 }
 
                 this.options.push(gen);
-                let ops:any={
-                    value:gen.__id_,
-                    selected:this.values.indexOf(gen.__id_)>=0,
-                };         
-                selectedCount+=ops.selected?1:0;
-                if(!multi && selectedCount>0)
-                {
-                    ops.selected=false;
-                }
-                this.selectOptions.push(<option {...ops}>{stripHtmlTags(gen.__label_)}</option>);    
-                this.itemsPush(gen,props);
             }
         }
     }
+
+    
 
     protected ckInpFocused=()=>{
         if(!this.ndInput) return;
@@ -381,7 +403,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 const dataValue=this.values[this.values.length-1];
                 if(this.valuesRem(dataValue))
                 {
-                    this.updSelectValues();
+                    //this.synSelectValues();
                     this.prepItems();
                     this.emit(this.callPropsChange);
                 }
@@ -421,7 +443,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 if(this.values.indexOf(dataValue)<=-1)
                 {                  
                     this.valuesAdd(dataValue);
-                    this.updSelectValues();
+                    //this.synSelectValues();
                     this.search=""; //clear search
                     this.prepItems();
                     this.emit(this.callPropsChange);
@@ -434,7 +456,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                     this.values=[]; 
                     this.places=[];
                     this.valuesAdd(dataValue);
-                    this.updSelectValues();
+                    //this.synSelectValues();
                     this.search=""; //clear search
                     this.prepItems();
                     this.emit(this.callPropsChange);
@@ -475,10 +497,12 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         typeof this.props.onChange==="function"?this.props.onChange(e as any):null;
     }
 
-    protected updSelectValues=()=>
+    /*
+    protected applySelValues=()=>
     {
         if(!this.ndSelect) return;
 
+        console.log("prepupdate Value");
         if(this.isMultiple())
         {
             this.values.forEach((value:string)=>{
@@ -488,13 +512,13 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             });
         }
         else {
-            this.ndSelect.value=this.values[0]; 
-            const nol=this.values[0];
-            console.log("select value to ",nol);
+            const val=toStr(this.values[0]);
+            this.ndSelect.value=val.length>0?val:""; 
+            console.log("select value single to ",val);
             console.log(this.ndSelect.value);
-
         }
     }
+    */
 
     protected hSWClick=(e:React.MouseEvent)=>
     {
@@ -539,7 +563,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             const dataValue=elAttr(node,'data-value');                
             if(node && dataValue && this.valuesRem(dataValue))
             {
-                this.updSelectValues();
+                //this.synSelectValues();
                 this.prepItems();
                 this.emit(this.callPropsChange);
             }
@@ -567,7 +591,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         {
             if(this.valuesRem())
             {
-                this.updSelectValues();
+                //this.synSelectValues();
                 this.prepItems();
                 this.emit(this.callPropsChange);
             }
@@ -577,18 +601,6 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         {
             this.setState({focus:false});
         }      
-    }
-
-    protected applySelect=()=>
-    {
-        if(!this.ndSelect) return;
-        if(this.isMultiple())
-        {
-            elAttrSet(this.ndSelect,'multiple','multiple');
-        }
-        else {
-            elAttrDel(this.ndSelect,'multiple');
-        }
     }
 
     protected updateCtrSize=()=>
@@ -611,11 +623,6 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     {
         window.addEventListener("click",this.onClickOutside);
         window.addEventListener("resize",this.updateCtrSize);
-        this.applySelect();
-        if(!this.isMultiple())
-        {
-            this.updSelectValues();
-        }
     }
 
     componentWillUnmount()
@@ -637,8 +644,9 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             {
                 this.prepValues();
                 this.prepOptions();
+                this.prepItems();
                 this.prepPlaces();
-            }            
+            }               
             this.emit();
             return;
         }
@@ -653,6 +661,16 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         const selProps:any={};
         selProps.name=props.name;
         selProps.id=props.id?props.id:selProps.name;
+
+        if(!multiple)
+        {
+            selProps.value=toStr(this.values[0]);
+        }
+        else 
+        {
+            selProps.multiple=true;
+        }
+
         const inputProps:any={
             className:"SelectInput",
         };
@@ -694,7 +712,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                             </ul>
                         </div>
                     </div>
-                
+                    
                 </div>
 
                 {loading && <div className="SelectLoading"></div>}

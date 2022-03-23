@@ -24,6 +24,7 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected ndTgDrop: any;
     protected ndTgRem: any;
     protected search: string;
+    private _cselops;
     constructor(props: P);
     protected gInitState: (props?: P | undefined) => S;
     protected isMultiple: (props?: P | undefined) => boolean;
@@ -38,7 +39,8 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     }) => JSX.Element;
     protected valuesRem: (idValue?: string | undefined) => boolean | undefined;
     protected itemsPush: (gen: Igen, props?: P | undefined) => void;
-    protected prepItems: () => void;
+    protected optionPush: (gen: Igen, props?: P | undefined) => void;
+    protected prepItems: (props?: P | undefined) => void;
     protected prepOptions: (props?: P | undefined) => void;
     protected ckInpFocused: () => void;
     protected emit: (cb?: (() => void) | undefined) => void;
@@ -46,10 +48,8 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected hSWKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => boolean;
     protected onItemClick: (e: React.MouseEvent) => void;
     protected callPropsChange: () => void;
-    protected updSelectValues: () => void;
     protected hSWClick: (e: React.MouseEvent) => void;
     protected onClickOutside: (e: MouseEvent) => void;
-    protected applySelect: () => void;
     protected updateCtrSize: () => void;
     componentDidMount(): void;
     componentWillUnmount(): void;
