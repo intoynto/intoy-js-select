@@ -488,7 +488,11 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             });
         }
         else {
-            this.ndSelect.value=this.values[0];            
+            this.ndSelect.value=this.values[0]; 
+            const nol=this.values[0];
+            console.log("select value to ",nol);
+            console.log(this.ndSelect.value);
+
         }
     }
 
