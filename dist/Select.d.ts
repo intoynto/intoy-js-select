@@ -24,6 +24,7 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected ndTgDrop: any;
     protected ndTgRem: any;
     protected search: string;
+    protected clBody: boolean;
     private _cselops;
     constructor(props: P);
     protected gInitState: (props?: P | undefined) => S;
@@ -51,6 +52,8 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected hSWClick: (e: React.MouseEvent) => void;
     protected onClickOutside: (e: MouseEvent) => void;
     protected updateCtrSize: () => void;
+    protected bodyClReg: () => void;
+    protected bodyClUnReg: () => void;
     componentDidMount(): void;
     componentWillUnmount(): void;
     componentDidUpdate(props: P): void;

@@ -55,9 +55,36 @@ function elInScrollView(view:HTMLElement,child:HTMLElement)
     }
 }
 
+
+type IfindParentNodeProps = {
+    el:HTMLElement
+    className:string
+    classStop:string 
+}
+
+function findParentNode(props:IfindParentNodeProps):HTMLElement|null
+{
+    if(!props.el) return null;
+    if(hasClass(props.el,props.className)) return props.el;
+    if(hasClass(props.el,props.classStop)) return null;
+    const {className,classStop}=props;
+    if(props.el.parentNode)
+    {
+        return findParentNode({
+            el:props.el.parentNode as HTMLElement,
+            className,
+            classStop,
+        });
+    }
+
+    return null;
+}
+
 type IcloseSvgProps = {
     className?:string
 }
+
+
 function CloseSvg(props:IcloseSvgProps)
 {
     return (
@@ -92,6 +119,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     protected ndTgDrop:any=null;
     protected ndTgRem:any=null;
     protected search:string='';
+    protected clBody:boolean=false;
 
     private _cselops:number=0;
 
@@ -312,9 +340,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 this.options.push(gen);
             }
         }
-    }
-
-    
+    }    
 
     protected ckInpFocused=()=>{
         if(!this.ndInput) return;
@@ -433,8 +459,15 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     }    
 
     protected onItemClick=(e:React.MouseEvent)=>
-    {
-        const optionEl:HTMLElement=e.target as HTMLElement;
+    {        
+        const optionEl=findParentNode({
+            el:e.target as HTMLElement,
+            className:'SelectItem',
+            classStop:'SelectItems',
+        });       
+
+        if(!optionEl) return;
+
         if(!hasClass(optionEl,'disabled'))
         {
             if(this.isMultiple())
@@ -599,7 +632,10 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         }
         if(!clickWrap)
         {
-            this.setState({focus:false});
+            if(this.state.focus) 
+            {
+                this.setState({focus:false});
+            }
         }      
     }
 
@@ -619,15 +655,28 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         }
     }
 
+    protected bodyClReg=()=>{
+        if(this.clBody) return;
+        window.addEventListener("click",this.onClickOutside);
+        this.clBody=true;
+    }
+
+    protected bodyClUnReg=()=>
+    {
+        if(!this.clBody) return;
+        window.removeEventListener("click",this.onClickOutside);
+        this.clBody=false;
+    }
+
     componentDidMount()
     {
-        window.addEventListener("click",this.onClickOutside);
+        this.bodyClReg();
         window.addEventListener("resize",this.updateCtrSize);
     }
 
     componentWillUnmount()
     {
-        window.removeEventListener("click",this.onClickOutside);
+        this.bodyClUnReg();
         window.removeEventListener("resize",this.updateCtrSize);
     }
 
@@ -651,6 +700,13 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             return;
         }
         this.updateCtrSize();
+        /* if(this.state.focus)
+        {
+            this.bodyClReg();
+        }
+        else {
+            this.bodyClUnReg();
+        } */
     }
 
     render()
