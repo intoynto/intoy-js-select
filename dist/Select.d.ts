@@ -47,7 +47,7 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected emit: (cb?: (() => void) | undefined) => void;
     protected onECh: (e: any) => void;
     protected hSWKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => boolean;
-    protected onItemClick: (e: React.MouseEvent) => void;
+    protected onItemClick: (dataValue: string | number) => void;
     protected callPropsChange: () => void;
     protected hSWClick: (e: React.MouseEvent) => void;
     protected onClickOutside: (e: MouseEvent) => void;

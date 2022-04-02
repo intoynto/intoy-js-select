@@ -250,7 +250,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             className:`SelectItem ${trueSelected?'selected disabled':''}`,
         };
         //console.log('itemPush focus:',this.state.focus,'from',this.values);
-        this.dropItems.push(<li onClick={this.onItemClick} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
+        this.dropItems.push(<li onClick={e=>{ e.preventDefault(); this.onItemClick(gen.__id_)}} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
     }
 
     protected optionPush=(gen:Igen,props?:P)=>
@@ -458,42 +458,32 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         return false;
     }    
 
-    protected onItemClick=(e:React.MouseEvent)=>
+    protected onItemClick=(dataValue:string|number)=>
     {        
-        const optionEl=findParentNode({
-            el:e.target as HTMLElement,
-            className:'SelectItem',
-            classStop:'SelectItems',
-        });       
+        
+        const value=toStr(dataValue).toString().trim();
 
-        if(!optionEl) return;
-
-        if(!hasClass(optionEl,'disabled'))
+        if(this.isMultiple())
         {
-            if(this.isMultiple())
-            {
-                const dataValue=optionEl.getAttribute("data-value")||"";
-                if(this.values.indexOf(dataValue)<=-1)
-                {                  
-                    this.valuesAdd(dataValue);
-                    //this.synSelectValues();
-                    this.search=""; //clear search
-                    this.prepItems();
-                    this.emit(this.callPropsChange);
-                }
+            if(this.values.indexOf(value)<=-1)
+            {                  
+                this.valuesAdd(value);
+                //this.synSelectValues();
+                this.search=""; //clear search
+                this.prepItems();
+                this.emit(this.callPropsChange);
             }
-            else {
-                const dataValue=optionEl.getAttribute("data-value")||"";
-                if(this.values.indexOf(dataValue)<=-1)
-                {
-                    this.values=[]; 
-                    this.places=[];
-                    this.valuesAdd(dataValue);
-                    //this.synSelectValues();
-                    this.search=""; //clear search
-                    this.prepItems();
-                    this.emit(this.callPropsChange);
-                }
+        }
+        else {            
+            if(this.values.indexOf(value)<=-1)
+            {
+                this.values=[]; 
+                this.places=[];
+                this.valuesAdd(value);
+                //this.synSelectValues();
+                this.search=""; //clear search
+                this.prepItems();
+                this.emit(this.callPropsChange);
             }
         }
     }
