@@ -50,6 +50,12 @@ class App<P extends IappProps,S extends IappState> extends React.Component<P,S>
 
     private onCh=(e:IAnyEvent)=>
     {
+        if(!e.target.value && this.value)
+        {
+            this.forceUpdate();
+            return;
+        }
+
         this.value=e.target.value;
         this.forceUpdate();
     }
@@ -101,7 +107,7 @@ class App<P extends IappProps,S extends IappState> extends React.Component<P,S>
             {value:32,label:'Amurang'},
             {value:33,label:'Malalayang'},
             {value:34,label:'Manado'},
-            {value:35,label:'Kalimat yang panjang digunakan untuk wrapper bagaimana model tampilan'},
+            {value:35,label:'Kalimat yang panjang digunakan untuk wrapper bagaimana model tampilan'},            
             
         ];
         return (
@@ -115,6 +121,7 @@ class App<P extends IappProps,S extends IappState> extends React.Component<P,S>
                         
                         <Plot title="Select Chosen Single">
                             <div className="pt-8">
+                                <div>Plakabe Value {this.value}</div>
                                 <div className="w-[250px]">
                                     <Select onChange={this.onCh} value={this.value} name="ops1" fieldid="value" fieldname="label" options={ops1} onFieldName={onFieldName} />
                                 </div>
@@ -126,7 +133,7 @@ class App<P extends IappProps,S extends IappState> extends React.Component<P,S>
                         </Plot>
                         
 
-                        
+                        {/*
                         <Plot title="Select Chosen Multile">
                             <div className="pt-8">
                                 <div className="w-250px">
@@ -151,6 +158,7 @@ class App<P extends IappProps,S extends IappState> extends React.Component<P,S>
                                 </div>
                             </div>
                         </Plot>
+                        */}
                         
 
                         <Plot title="Input Native Others">

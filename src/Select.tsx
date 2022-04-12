@@ -490,7 +490,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
     protected callPropsChange=()=>
     {
-        if(!this.ndSelect) return;
+        if(!this.ndSelect || typeof this.props.onChange!=='function') return;
 
         const multi=this.isMultiple();
         let data:any=[];
@@ -675,11 +675,16 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         const satu=isEqual(props.value,this.props.value);
         const dua=isEqual(props.multiple,this.props.multiple);
         const tiga=isEqual(props.options,this.props.options);
-        const empat=props.loading===this.props.loading;
-        const sama=satu && dua && tiga && empat;
+        const empat=props.loading===this.props.loading;        
+
+        const values=this.values;
+        const baValues=toArrayString(this.props.value);
+        const eka=isEqual(this.values,toArrayString(this.props.value));
+
+        const sama=satu && dua && tiga && empat && eka;
         if(!sama)
         {
-            if(!satu || !dua || !tiga)
+            if(!satu || !dua || !tiga || !eka)
             {
                 this.prepValues();
                 this.prepOptions();
@@ -688,15 +693,9 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             }               
             this.emit();
             return;
-        }
+        }   
         this.updateCtrSize();
-        /* if(this.state.focus)
-        {
-            this.bodyClReg();
-        }
-        else {
-            this.bodyClUnReg();
-        } */
+       
     }
 
     render()
