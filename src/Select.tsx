@@ -474,7 +474,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 this.emit(this.callPropsChange);
             }
         }
-        else {            
+        else {         
             if(this.values.indexOf(value)<=-1)
             {
                 this.values=[]; 
@@ -494,6 +494,8 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
         const multi=this.isMultiple();
         let data:any=[];
+        let values=this.values.slice(0);
+        const selectize=values.length>0;
         if(multi)
         {
             for(let i=0; i<this.values.length; i++)
@@ -511,37 +513,14 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         const e:ISelectValueTarget={
             target:{
                 name:this.ndSelect.name,
-                value:this.isMultiple()?this.values:this.values[0]
+                value:multi?values:(values[0]||'')
             }
         };
-        (e as any).target.data=multi?data:data[0];
+        (e as any).target.data=selectize?(multi?data:data[0]):undefined;
         (e as any).currentTarget={...e.target};
         (e as any).preventDefault=function(){};
         typeof this.props.onChange==="function"?this.props.onChange(e as any):null;
     }
-
-    /*
-    protected applySelValues=()=>
-    {
-        if(!this.ndSelect) return;
-
-        console.log("prepupdate Value");
-        if(this.isMultiple())
-        {
-            this.values.forEach((value:string)=>{
-                const selector=`option[value='${value}']`;
-                const el=this.ndSelect.querySelector(`option[value='${value}']`);
-                elAttrSet(el,'selected','true');
-            });
-        }
-        else {
-            const val=toStr(this.values[0]);
-            this.ndSelect.value=val.length>0?val:""; 
-            console.log("select value single to ",val);
-            console.log(this.ndSelect.value);
-        }
-    }
-    */
 
     protected hSWClick=(e:React.MouseEvent)=>
     {
@@ -677,9 +656,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         const tiga=isEqual(props.options,this.props.options);
         const empat=props.loading===this.props.loading;        
 
-        const values=this.values;
-        const baValues=toArrayString(this.props.value);
-        const eka=isEqual(this.values,toArrayString(this.props.value));
+        const eka=isEqual(toArrayString(props.value),toArrayString(this.props.value));
 
         const sama=satu && dua && tiga && empat && eka;
         if(!sama)
