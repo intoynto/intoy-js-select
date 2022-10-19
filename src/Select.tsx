@@ -9,6 +9,20 @@ function triggerClick(el:any)
     el.dispatchEvent(event);
 }
 
+function eventFire(events:string|string[],el?:HTMLElement)
+{
+    if(!el) return;
+    const pip:string[]=Array.isArray(events)?events:[events];
+    for(let i=0; i<pip.length; i++)
+    {
+        const p=pip[i];
+        if(typeof (el as any)[p]==='function')
+        {
+            (el as any)[p]();
+        }
+    }
+}
+
 function classRemove(el:any,className:string)
 {
     el?(el as HTMLElement).classList.remove(className):null;
@@ -245,12 +259,16 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
         const iof=this.values.indexOf(gen.__id_);
         const trueSelected=this.isMultiple(props)?iof>=0:gen.__id_===this.values[0];
+        const _intClick=(e:React.MouseEvent<HTMLLIElement>)=>{
+            e.preventDefault();
+            this.onItemClick(gen.__id_);
+        };
         const itemProps:any={
             'data-value':gen.__id_,
             className:`SelectItem ${trueSelected?'selected disabled':''}`,
         };
         //console.log('itemPush focus:',this.state.focus,'from',this.values);
-        this.dropItems.push(<li onClick={e=>{ e.preventDefault(); this.onItemClick(gen.__id_)}} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
+        this.dropItems.push(<li onClick={_intClick} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
     }
 
     protected optionPush=(gen:Igen,props?:P)=>
@@ -365,6 +383,22 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         this.emit();
     }
 
+    private doBlur=():boolean=>
+    {
+        if (!this.ndWrap) {
+            return false;
+        };
+        const efocus=getFocusElement();
+        const contains=efocus && (this.ndWrap as HTMLElement).contains(efocus);
+        if(contains)
+        {
+            eventFire("blur",efocus as HTMLElement);
+            return true;
+        }
+
+        return false;
+    }
+
     protected hSWKeyDown=(e:React.KeyboardEvent<HTMLDivElement>)=>
     {
         const key=toStr(e.key).toLowerCase().trim();
@@ -415,12 +449,15 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         {
             if(focus)
             {
-                const pop=findFocusOrSelect();
-                triggerClick(pop);
+                const li:HTMLLIElement|undefined=findFocusOrSelect();
+                if(li){
+                    e.preventDefault();
+                    triggerClick(li);
+                    this.setState({focus:false});                    
+                }
+                return;
             }
-            else {
-                triggerClick(this.ndWrap);
-            }
+            //triggerClick(this.ndWrap); // do not
         }
         else if(key==='backspace')
         {
