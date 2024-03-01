@@ -5,12 +5,14 @@ import { isEqual } from "./utils";
 
 type IselectListPropsExtend=Omit<ISelectProps,"options" | "loading">
 
-type IselectListProps = IselectListPropsExtend  & {
+export type IselectListProps = IselectListPropsExtend  & {
     url:string
     params?:any
+    useCache?:boolean
+    sortField?:string
 }
 
-type IselectListState = {
+export type IselectListState = {
     loading:boolean
     options:any[]
 }
@@ -64,8 +66,27 @@ class SelectList<P extends IselectListProps,S extends IselectListState> extends 
             const options:any[]=Array.isArray(res)?res
                                 :typeof res==='object' && Array.isArray(res.records)?res.records
                                 :[];
+            this.prepSort(options);
             this.setState({loading:false,options});
         });
+    }
+
+    protected prepSort=(options:any[])=>
+    {
+        if(Array.isArray(options) && options.length>0)
+        {
+
+            const props=this.props;
+            let sortField=(props.sortField||'').toString().trim();
+            if(sortField.length>0)
+            {
+                options.sort((a:any,b:any)=>{
+                    const val_a=a[sortField];
+                    const val_b=b[sortField];
+                    return val_a>val_b?1:(val_a<val_b?-1:0);
+                });
+            }
+        }
     }
 
     componentDidMount()

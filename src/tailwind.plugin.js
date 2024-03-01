@@ -301,7 +301,7 @@ const forms=plugin.withOptions(function()
             },
         });
 
-        // multiple focus
+        // select multiple
         rules.push({
             class:'.Select.multiple',
             styles:{                
