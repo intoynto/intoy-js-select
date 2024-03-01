@@ -1,3 +1,5 @@
+import { Ioption } from "./types";
+
 export function toUtf8String(value:string)
 {
     let val='';
@@ -147,4 +149,83 @@ export function stripHtmlTags(str:string | number | null | undefined)
 export function getFocusElement()
 {
     return document && document.activeElement;
+}
+
+export function random_string():string
+{
+    return ('sl'+Math.random().toString(32)+Date.now().toString(32)).replace(/\./g,'');
+}
+
+type IgeneratOptionsProps = {
+    options?:any[]
+    fieldid?:string
+    fieldname:string
+    onFieldName?:(e:any)=>string
+}
+
+type IgenerateOptionResult = {
+    options:Ioption[]
+    options_b:string[];
+}
+
+export function generateOptions(props:IgeneratOptionsProps):IgenerateOptionResult
+{
+    const ops:Ioption[]=[];
+    const ops_b:any=[];
+
+    if(Array.isArray(props.options) && props.options.length>0)
+    {
+        let fid=toStr(props.fieldid).toString().trim();
+        let fname=toStr(props.fieldname).toString().trim();
+        fid=fid.length<1?"id":fid;
+        fname=fname.length<1?fid:fname;
+
+        const keys:any[]=[];
+        for(let i=0; i<props.options.length; i++)
+        {
+            if(isObjectEmpty(props.options[i])) continue;
+            const o=props.options[i];
+
+            let valueId=toStr(o[fid]).toString().trim();
+
+            if(keys.indexOf(valueId)>=0) continue;
+
+            let label=toStr(o[fname]);
+            label=label.length<1?valueId:label;
+            let __html=label;
+
+            if(typeof props.onFieldName==='function')
+            {
+                try {
+                    const test=toStr(props.onFieldName(o)).toString().trim();
+                    if(test.length>0)
+                    {
+                        __html=test;
+                    }
+                }
+                catch(errr:any)
+                {
+
+                }
+            }
+
+            ops_b.push(valueId);
+
+            const ps:Ioption={
+                ...o,
+                __id:valueId,
+                __label:stripHtmlTags(label),
+                __html,
+            }
+
+            keys.push(valueId);
+
+            ops.push(ps);
+        }
+    }
+
+    return {
+        options:ops,
+        options_b:ops_b,
+    };
 }

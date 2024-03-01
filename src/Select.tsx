@@ -1,783 +1,476 @@
 import React from "react";
-import {ISelectProps,ISelectState, ISelectValueTarget} from "./types";
-import {getFocusElement, isEqual, isObjectEmpty, stripHtmlTags, toArrayString, toStr} from "./utils";
+import { ISelectProps, ISelectState, Ioption } from "./types";
+import {toArrayString, isEqual, generateOptions, random_string, getFocusElement, toStr} from "./utils";
+import DropDown from "./DropDown";
+import { info } from "autoprefixer";
 
-function triggerClick(el:any)
-{
-    if(!el) return;
-    const event=new Event("click");
-    el.dispatchEvent(event);
-}
 
-function eventFire(events:string|string[],el?:HTMLElement)
+class Select<P extends ISelectProps,S extends ISelectState> extends React.Component<P,S>
 {
-    if(!el) return;
-    const pip:string[]=Array.isArray(events)?events:[events];
-    for(let i=0; i<pip.length; i++)
+    protected _id:string;
+    protected _id_options:string;
+    protected ndSelect:HTMLDivElement|null=null;
+    protected ndInput:HTMLInputElement|null=null;
+    protected ndDrobBox:HTMLDivElement|null=null;
+    protected selectedValues:any[]=[];
+    protected options:Ioption[]=[];
+    protected options_b:string[]=[];
+    protected _lsoutside:boolean=false;
+    protected _lsenter:boolean=false;
+
+    constructor(props:P)
     {
-        const p=pip[i];
-        if(typeof (el as any)[p]==='function')
+        super(props);
+
+        this._id=random_string();
+        this._id_options=`${this._id}_option`;
+
+        this.athProps(props);
+        this.prepValues(props);
+        this.state=this.gState(props);
+    }
+
+    protected gState=(props:P):S=>
+    {
+        return {
+            focus:false,
+            open:false,
+            keyword:'',
+            label:'',
+            emit:0,
+        } as S;
+    }
+
+    protected athProps=(props?:P)=>
+    {
+        props=props||this.props;
+        const {options,options_b}=generateOptions({
+            options:props.options,
+            fieldid:props.fieldid,
+            fieldname:props.fieldname,
+            onFieldName:props.onFieldName,
+        });
+
+        this.options=options;
+        this.options_b=options_b;
+    }
+
+    // prepare array values
+    protected prepValues=(props?:P):boolean=>
+    {
+        props=props||this.props;
+        const newValues=toArrayString(props?.value);
+        const changed=!isEqual(newValues,this.selectedValues);
+        if(!changed) {
+            return false;
+        }
+
+        this.selectedValues=newValues.filter((n:string)=>{ return this.options_b.indexOf(n)>=0 });
+        return true;
+    }  
+
+    protected callChange=()=>
+    {
+        if(typeof this.props.onChange==='function')
         {
-            (el as any)[p]();
+            const props=this.props;
+            const value=props.multiple?this.selectedValues.slice(0):this.selectedValues[0]||null;
+            const target:any={
+                name:props.name,
+                value,
+            };
+
+            //  bind array data
+            const datas:any[]=[];
+            for(let i=0; i<this.selectedValues.length; i++)
+            {
+                const iof=this.options_b.indexOf(this.selectedValues[i]);
+                const opt={... this.options[iof]};
+                datas.push(opt);
+                if(!props.multiple) break;
+            }
+
+            target.data=props.multiple?datas:datas[0]||null;
+
+            const e:any={
+                target,
+                currentTarget:{...target},
+                preventDefault:function(){},
+                stopPropagation:function(){},
+            };            
+
+            this.props.onChange(e);  
+        }
+    }      
+
+    protected callConfirmChange=(value:string,method:"add"|"delete"):boolean=>
+    {
+        //console.log("calConfirm",method,"value",value,'iof',this.selectedValues.indexOf(value));
+
+        if(method==="add" && this.selectedValues.indexOf(value)>=0) return false;
+        if(method==="delete" && this.selectedValues.indexOf(value)<0 ) return false;
+
+        let yes:boolean=true;
+        const multiple=this.props.multiple!==undefined && this.props.multiple!==null?this.props.multiple:false;
+
+        if(typeof this.props.onConfirmChange==='function')
+        {
+            if(multiple)
+            {
+                const from=this.selectedValues.slice(0);
+                let to=[];
+                const iof=this.selectedValues.indexOf(value);
+                if(method==="add")
+                {
+                    to=from.slice(0);
+                    to.push(value);
+                }
+                else {
+                    to=from.filter((n:any,idx:number)=>{ return idx!==iof; });
+                }
+                yes=this.props.onConfirmChange(from,to,multiple);
+            }
+            else 
+            {
+                const iof=this.selectedValues.indexOf(value);
+                let from:any=undefined;
+                let to:any=undefined;
+                from=method==="add"?this.selectedValues[iof]:value;
+                to=method=="add"?value:undefined;                
+                yes=this.props.onConfirmChange(from,to,multiple);
+            }            
+        }
+
+        if(yes)
+        {
+            if(multiple) {
+                if(method==="add")
+                {
+                    this.selectedValues.push(value);
+                }
+                else {
+                    this.selectedValues.splice(this.selectedValues.indexOf(value),1);
+                }
+            }
+            else 
+            {
+                this.selectedValues=[]; // reset array
+                if(method==="add")
+                {
+                    this.selectedValues.push(value);
+                }
+            }
+        }
+
+        return yes;
+    }
+    
+
+    protected onInputFocus=(e:React.FocusEvent<HTMLInputElement>)=>
+    {
+        this.setState({focus:true,open:true});
+    }
+
+    protected onInputChange=(e:React.ChangeEvent<HTMLInputElement>)=>
+    {
+        const value=e.target.value;
+        this.setState({keyword:value,label:toStr(value).toString().trim()});
+    }
+
+    protected onInputBlur=(e:React.FocusEvent<HTMLInputElement>)=>
+    {
+        if(this._lsoutside) {
+            this.setState({focus:false});
+            return
+        };
+
+        if(this.ndSelect)
+        {
+            requestAnimationFrame(()=>
+            {
+                const efocus=getFocusElement();
+                const containts=efocus && (this.ndSelect as HTMLElement).contains(efocus);                
+                if(!containts)
+                {
+                    this.setState({open:false});
+                }
+                else {
+                    this.setState({focus:false});
+                }
+            });
         }
     }
-}
 
-function classRemove(el:any,className:string)
-{
-    el?(el as HTMLElement).classList.remove(className):null;
-}
-
-function classAdd(el:any,className:string)
-{
-    el?(el as HTMLElement).classList.add(className):null;
-}
-
-function elAttr(el:any,attr:string)
-{
-    return el?(el as HTMLElement).getAttribute(attr):null;
-}
-
-function elAttrSet(el:any,key:string,value:string)
-{
-    el?(el as HTMLElement).setAttribute(key,value):null;
-}
-
-function elAttrDel(el:any,key:string)
-{
-    el?(el as HTMLElement).removeAttribute(key):null;
-}
-
-function hasClass(dom:HTMLElement,className:string)
-{
-    return dom && dom.classList.contains(className);
-}
-
-function elFocus(dom:any)
-{
-    dom && dom.focus && typeof dom.focus==="function"?dom.focus():null;
-}
-
-function elInScrollView(view:HTMLElement,child:HTMLElement)
-{
-    const docViewBottom=view.scrollTop + view.offsetHeight;
-    const childBottom=child.offsetTop + child.offsetHeight;
-    const inView=((childBottom<docViewBottom) && (child.offsetTop>=view.scrollTop) );   
-    if(!inView)
+    protected hideOutSideClick=(e:MouseEvent)=>
     {
-        view.scrollTop=child.offsetTop;        
+        if(!this.ndSelect) return;
+
+        if(!(e.target instanceof HTMLElement)) return;
+
+        const target:HTMLElement=e.target as HTMLElement;
+        const closest=target.closest(`#${this._id}`);
+        const must_close_focus=!closest;
+        if(must_close_focus)
+        {            
+            if(this.state.focus || this.state.open)
+            {
+                this.setState({focus:false,open:false});
+            }
+        }
+        else {
+            this._lsoutside=true;
+            requestAnimationFrame(()=>{
+                this._lsoutside=false;
+            })
+        }
+    }
+
+    protected onInputKeyDown=(e:React.KeyboardEvent<HTMLInputElement>)=>
+    {
+        if(!this.ndDrobBox) return;
+
+        let key=(e.key).toLowerCase().trim();
+        const is_enter=key==='enter';
+        const is_backspace=key==='backspace';
+        const is_down=key==='arrowdown';
+        const is_up=key==='arrowup';
+
+        if(is_enter)
+        {
+            const elsa=this.ndDrobBox.querySelector('.SelectItem.focus');
+            if(elsa)
+            {
+                const id=elsa.getAttribute('data-value')||'';
+                if(id.length>0)
+                {
+                    const iof=this.options_b.indexOf(id);
+                    const opt:Ioption|undefined=iof>=0?this.options[iof]:undefined;
+                    if(opt && this.selectedValues.indexOf(opt.__id)<0)
+                    {   
+                        if(this.callConfirmChange(opt.__id,"add"))
+                        {
+                            this.setState({label:opt.__id,focus:false},this.callChange);                            
+                        }
+                    }
+                }
+            }           
+        }
+        else if (is_down || is_up)
+        {
+            e.preventDefault(); // prevent
+            const dropdown =this.ndDrobBox.querySelector('.SelectItems');
+            if(dropdown)
+            {
+                const childs = dropdown.children; // get all dropdown elements
+                if(childs.length>0)
+                {
+                    let i=0, j=0;
+                    let focusIndex=0;
+                    let selectedIndex=0;
+                    let foundFocus:boolean=false;
+                    let foundSelect:boolean=false;
+                    const cls='focus';
+                    for(let c of childs)
+                    {
+                        const hfocus=c.classList.contains(cls);
+                        const hsel=c.classList.contains('selected');
+                        if(hfocus)
+                        {
+                            focusIndex=j;
+                            foundFocus=true;
+                        }
+                        if(hsel)
+                        {
+                            selectedIndex=j;
+                            foundSelect=true;
+                        }                        
+                        c.classList.remove(cls);
+                        j++;
+                    } 
+                    if(foundSelect || foundFocus) 
+                    { 
+                        i=foundFocus?focusIndex:selectedIndex;
+
+                        if(is_down) { i++; } else { i--; } 
+                        i=i<0?0:(i>childs.length-1?childs.length-1:i);
+                    }                    
+                    if(childs[i])
+                    {
+                        childs[i].classList.add(cls);
+                        childs[i].scrollIntoView({
+                            block:'center',
+                            inline:'center',
+                        });
+                    }
+                }
+                
+            }
+        }
+        else if(is_backspace)
+        {
+            //remove last element selected
+            if(this.props.multiple && this.state.keyword==="" && this.selectedValues.length>0)
+            {
+                if(this.callConfirmChange(this.selectedValues[this.selectedValues.length-1],"delete"))
+                {
+                    // this.selectedValues.pop(); // remove last element // ------------------------------------
+                    this.setState({label:''});
+                }                
+            }
+        }
+    }   
+
+    protected onClickSelect=(opt:Ioption)=>
+    {
+        if(this.selectedValues.indexOf(opt.__id)>=0) return;
+
+        if(this.callConfirmChange(opt.__id,"add"))
+        {
+            this.setState({label:opt.__label},this.callChange);
+        }    
+    }
+
+    // remove by data props.multiple
+    protected onClickRem=(opt?:Ioption)=>
+    {
+       if(!opt) return;
+
+       if(this.callConfirmChange(opt.__id,"delete"))
+       {
+            this.forceUpdate(this.callChange);
+       }
+    }
+
+    // onchange element single
+    protected onClickRemLast=(e?:React.MouseEvent)=>
+    {
+        if(e) e.preventDefault();
+        if(this.selectedValues.length>0)
+        {
+            const iof=this.options_b.indexOf(this.selectedValues[this.selectedValues.length-1]);
+            const opt:Ioption=this.options[iof];
+            if(this.callConfirmChange(opt.__id,"delete"))
+            {
+                // this.selectedValues.splice(this.selectedValues.length-1,1); ------------------------------------
+                this.forceUpdate(this.callChange);
+            }
+        }
+    }
+
+    // 
+    protected onToggleOpen=(e?:React.MouseEvent)=>
+    {
+        if(e) e.preventDefault();
+        this.setState({open:!this.state.open});
+    }
+
+    componentDidMount()
+    {
+        window.addEventListener("mousedown",this.hideOutSideClick);
+    }
+
+    componentWillUnmount()
+    {
+        window.removeEventListener("mousedown",this.hideOutSideClick);
+    }    
+    
+    componentDidUpdate(prev: Readonly<P>, prevState: Readonly<S>, snapshot?: any): void 
+    {
+        const sama_props=isEqual(prev.options,this.props.options);        
+        const sama_value=isEqual(prev.value,this.props.value);
+        const sama_load=prev.loading===this.props.loading;
+
+        const harus_update1=(!sama_props || !sama_value);        
+        const harus_update2=!sama_load;
+
+        if(harus_update1)
+        {
+            this.athProps(this.props);
+            this.prepValues(this.props);
+        } 
+        
+        if(harus_update1 || harus_update2)
+        {
+            this.forceUpdate();
+        }
+    }
+    
+
+    render()
+    {
+        const props=this.props;
+        const {multiple,loading}=props;
+        const {focus,open,keyword}=this.state;
+        const single=!multiple;
+        const is_selected=this.selectedValues.length>0;
+        const empty_keyword=[""," "].indexOf(keyword)>=0;
+        
+        let show_label=(!is_selected) || (!focus);//;
+
+        type IInputProps=React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+        const inputProps:IInputProps={
+            className:`SelectInput ${focus?'show':'hide'}`,
+            value:keyword,
+            onChange:this.onInputChange,
+            onFocus:this.onInputFocus,
+            onBlur:this.onInputBlur,
+            onKeyDown:this.onInputKeyDown,
+            spellCheck:"false",
+        };       
+
+        return (
+            <div ref={fn=>this.ndSelect=fn} id={this._id} className={`Select ${multiple?'multiple':'single'} ${focus?'focus':''} ${open?'open':''}`}>                
+                <div className={`SelectWrap`}>
+                    <div className={`SelectBox`}>
+                        <div className={`SelectControls`}>
+                            {(!is_selected && (!focus || (focus && empty_keyword)) && props.placeholder) && <div className="SelectPlaceholder">{props.placeholder}</div>}
+                            {(is_selected) && 
+                                this.selectedValues.map((fid:string)=>{ 
+                                    const iof=this.options_b.indexOf(fid);
+                                    let opt:Ioption=this.options[iof];
+                                    if(!opt) return null;
+
+                                    return <div className={`SelectLabel ${show_label?'show':'hide'}`}><div className="SelectLabelVal" dangerouslySetInnerHTML={{__html:opt.__html}} />{multiple && <div onClick={(e:React.MouseEvent)=>{ e.preventDefault(); this.onClickRem(opt)}} className="SelectLabelValRem"><CloseSVG /></div>}</div>
+                                }) 
+                            }
+                            <input ref={fn=>this.ndInput=fn} {...inputProps}  />
+                        </div>
+                        <div className={`SelectArrows`}>
+                            {(single && is_selected) && <span className={`SelectArrow SelectArrowRemove`} onClick={this.onClickRemLast}><CloseSVG /></span>}
+                            <span onClick={this.onToggleOpen} className={`SelectArrow SelectArrowDropDown`}></span>
+                        </div>
+                    </div>
+                    {loading && <div className="SelectLoading"></div>}
+                </div>    
+                <div ref={fn=>this.ndDrobBox=fn} className={`SelectDropBox`}>
+                    <DropDown 
+                        name={props.name}
+                        id_options={this._id_options}
+
+                        options={this.options} 
+                        keyword={keyword}
+                        onBlur={this.onInputBlur}
+                        
+                        onClickSelect={this.onClickSelect}
+                        selectedValues={this.selectedValues}
+
+                        multiple={props.multiple}
+                        
+                    />
+                </div>            
+            </div>
+        );
     }
 }
 
-
-type IfindParentNodeProps = {
-    el:HTMLElement
-    className:string
-    classStop:string 
-}
-
-function findParentNode(props:IfindParentNodeProps):HTMLElement|null
-{
-    if(!props.el) return null;
-    if(hasClass(props.el,props.className)) return props.el;
-    if(hasClass(props.el,props.classStop)) return null;
-    const {className,classStop}=props;
-    if(props.el.parentNode)
-    {
-        return findParentNode({
-            el:props.el.parentNode as HTMLElement,
-            className,
-            classStop,
-        });
-    }
-
-    return null;
-}
 
 type IcloseSvgProps = {
     className?:string
 }
 
-
-function CloseSvg(props:IcloseSvgProps)
+function CloseSVG(props:IcloseSvgProps)
 {
-    return (
-        <svg className={props.className} height="14" width="14" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path className={props.className} d="M14.348 14.849c-0.469 0.469-1.229 0.469-1.697 0l-2.651-3.030-2.651 3.029c-0.469 0.469-1.229 0.469-1.697 0-0.469-0.469-0.469-1.229 0-1.697l2.758-3.15-2.759-3.152c-0.469-0.469-0.469-1.228 0-1.697s1.228-0.469 1.697 0l2.652 3.031 2.651-3.031c0.469-0.469 1.228-0.469 1.697 0s0.469 1.229 0 1.697l-2.758 3.152 2.758 3.15c0.469 0.469 0.469 1.229 0 1.698z"></path></svg>
-    );
+    return (<svg className={props.className} height="14" width="14" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path className={props.className} d="M14.348 14.849c-0.469 0.469-1.229 0.469-1.697 0l-2.651-3.030-2.651 3.029c-0.469 0.469-1.229 0.469-1.697 0-0.469-0.469-0.469-1.229 0-1.697l2.758-3.15-2.759-3.152c-0.469-0.469-0.469-1.228 0-1.697s1.228-0.469 1.697 0l2.652 3.031 2.651-3.031c0.469-0.469 1.228-0.469 1.697 0s0.469 1.229 0 1.697l-2.758 3.152 2.758 3.15c0.469 0.469 0.469 1.229 0 1.698z"></path></svg>);
 }
 
-type Igen = {
-    __id_:string
-    __label_:string
-    __labelOrigin_:string
-    [key:string]:any
-}
-
-class Select<P extends ISelectProps,S extends ISelectState> extends React.Component<P,S>
-{
-    static version='1';
-
-    protected options:any[]=[];
-    protected valueRef:any[]=[];
-    protected selectOptions:any[]=[];
-    protected values:any[]=[];
-    protected dropItems:any=[];
-    protected places:any=[];
-    protected ndWrap:any=null;
-    protected ndSelBox:any=null;
-    protected ndSelCtr:any=null;
-    protected nDropDown:any=null;
-    protected ndSelect:any=null;
-    protected ndInput:any=null;
-    protected ndNoInput:any=null;
-    protected ndTgDrop:any=null;
-    protected ndTgRem:any=null;
-    protected search:string='';
-    protected clBody:boolean=false;
-
-    private _cselops:number=0;
-
-    constructor(props:P)
-    {
-        super(props);        
-        this.state=this.gInitState(props);
-        this.prepValues(props);
-        this.prepOptions(props);
-        this.prepItems(props);
-        this.prepPlaces(props);        
-    }
-
-    protected gInitState=(props?:P)=>
-    {
-        const s:S={
-            focus:false,
-            emit:0,
-        } as S;
-        return s as S;
-    }
-
-    protected isMultiple=(props?:P)=>
-    {
-        props=props||this.props;
-        return props.multiple?true:false;
-    }
-
-    protected isDisabled=(props?:P)=>
-    {
-        props=props||this.props;
-        return props.disabled?true:false;
-    }
-
-    // prepare array values
-    protected prepValues=(props?:P)=>
-    {
-        props=props||this.props;
-        const newValues=toArrayString(props?.value);
-        const changed=!isEqual(newValues,this.values);
-        if(!changed) return;
-        this.values=newValues.slice(0);
-    }
-
-    // prepare place holder from array values
-    protected prepPlaces=(props?:P)=>
-    {
-        this.places=[];
-        if(this.values.length>0)
-        {
-            const multiple=this.isMultiple();
-            for(let i=0; i<this.values.length; i++)
-            {
-                const iof=this.valueRef.indexOf(this.values[i]);
-                const ops:Igen=this.options[iof];
-                if(iof>=0 && ops)
-                {
-                    this.places.push(this.rdrPlace({dngH:ops.__label_,multiple,dataValue:ops.__id_})); 
-                    if(!this.isMultiple(props)) break;
-                }
-            }
-        }
-    }
-
-    protected valuesAdd=(idValue:string)=>
-    {
-        if(idValue){
-            this.values.push(idValue);
-            const iof=this.valueRef.indexOf(idValue);
-            const ops:Igen=this.options[iof];
-            this.places.push(this.rdrPlace({dngH:ops.__label_,multiple:this.isMultiple(),dataValue:ops.__id_}));
-        }
-    }
-
-    protected rdrPlace=(
-        {dngH,multiple,dataValue}:{dngH:string,multiple:boolean,dataValue:string})=>
-    {
-        return (<div className={`SelectLabel SLRem`} data-value={dataValue}><div className="SelectLabelVal SLRem" dangerouslySetInnerHTML={{__html:dngH}}></div>{multiple && <div className="SelectLabelRem SLRem SLRemDo" role={"button"}><CloseSvg className="SLRem SLRemDo" /></div>}</div>)
-    }
-
-    protected valuesRem=(idValue?:string)=>
-    {
-        if(idValue)
-        {
-            //remove by value
-            let iof=this.values.indexOf(idValue);
-            if(iof>=0)
-            {
-                this.values.splice(iof,1);
-                this.places.splice(iof,1);
-                return true;
-            }
-            return false;
-        }
-        const nol=this.values[0];        
-        if(nol)
-        {
-            const iof=this.valueRef.indexOf(nol);
-            this.values.splice(0,1);
-            this.places.splice(0,1);
-            return true;
-        }
-    }
-
-    protected itemsPush=(gen:Igen,props?:P)=>
-    {
-        gen=gen||{};
-        const {focus}=this.state;
-        const search:string=toStr(this.search).trim().toLowerCase();
-        const matchReg=function(text:string)
-        {
-            text=toStr(text).toString().toLowerCase().trim();
-            const mreg=new RegExp(search);
-            return mreg.test(text);
-        };
-        let like:boolean=true;        
-        if(focus && search.length>0)
-        {
-            like=(matchReg(gen.__id_) || matchReg(gen.__label_));
-        }
-        //console.log({search,id:gen.__id_,_lab:gen.__label_,like});
-        if(!like) return;
-
-        const iof=this.values.indexOf(gen.__id_);
-        const trueSelected=this.isMultiple(props)?iof>=0:gen.__id_===this.values[0];
-        const _intClick=(e:React.MouseEvent<HTMLLIElement>)=>{
-            e.preventDefault();
-            this.onItemClick(gen.__id_);
-        };
-        const itemProps:any={
-            'data-value':gen.__id_,
-            className:`SelectItem ${trueSelected?'selected disabled':''}`,
-        };
-        //console.log('itemPush focus:',this.state.focus,'from',this.values);
-        this.dropItems.push(<li onClick={_intClick} {...itemProps} dangerouslySetInnerHTML={{__html:gen.__label_}}></li>)
-    }
-
-    protected optionPush=(gen:Igen,props?:P)=>
-    {
-        const is_true=gen && gen.__id_!==undefined && gen.__id_!==null;
-        if(is_true)
-        {
-            const multi=this.isMultiple(props);
-            if(!multi && this.selectOptions.length<1)
-            {
-                //push empty option value
-                //this.selectOptions.push(<option/>);
-            }
-
-            const selected=(!multi && this._cselops<1) && this.values.indexOf(gen.__id_)>=0;
-            let optionProps:any={
-                value:gen.__id_,
-            };
-
-            if(selected)
-            {
-                optionProps.selected=true;
-                this._cselops++;
-            }
-            this.selectOptions.push(<option {...optionProps}>{stripHtmlTags(gen.__label_)}</option>); 
-        }
-    }    
-
-
-    // re-items dropDown dan Select<option>
-    protected prepItems=(props?:P)=>
-    {
-        this.dropItems=[]; //clear dropdown items
-        this.selectOptions=[]; //clear select options
-        this._cselops=0; // reset count selected options
-        this.options.forEach((gen:any)=>{
-            this.optionPush(gen,props) // add option in select
-            this.itemsPush(gen,props); //add drop down item
-        });
-    }
-
-    // untuk mengambil property options dari props
-    protected prepOptions=(props?:P)=>
-    {
-        props=props||this.props;
-        this.options=[];
-        this.valueRef=[];
-        if(Array.isArray(props.options) && props.options.length>0)
-        {
-            let fieldid=toStr(props.fieldid).toString().trim();
-            let fieldname=toStr(props.fieldname).toString().trim();
-            fieldid=fieldid.length<1?"id":fieldid;
-            fieldname=fieldname.length<1?fieldid:fieldname;
-            const dataKeys:any=[];
-            for(let i=0; i<props.options.length; i++)
-            {
-                const o:any=props.options[i];
-                if(isObjectEmpty(o)) continue;
-                let valueId=toStr(o[fieldid]).toString().trim();
-                if(dataKeys.indexOf(valueId)>=0) continue;
-                let label=toStr(o[fieldname]);
-                label=label.length<1?valueId:label;
-                const labelOrigin=label;
-                if(typeof props.onFieldName==='function')
-                {
-                    try {
-                        const test=props.onFieldName(o);
-                        if(typeof test==="string" && toStr(test).length>0)
-                        {
-                            label=toStr(test).toString().trim();
-                        }
-                    }
-                    catch(e)
-                    {
-
-                    }
-                }
-                dataKeys.push(valueId);
-                this.valueRef.push(valueId);
-                const gen:Igen= {
-                    ...o,
-                    __id_: valueId,
-                    __label_:label,
-                    __labelOrigin_:labelOrigin
-                }
-
-                this.options.push(gen);
-            }
-        }
-    }    
-
-    protected ckInpFocused=()=>{
-        if(!this.ndInput) return;
-
-        const focusObj=getFocusElement();        
-        if(focusObj && focusObj!==this.ndInput)
-        {
-            elFocus(this.ndInput);
-        }
-    }
-
-    protected emit=(cb?:()=>void)=>
-    {
-        this.setState({emit:this.state.emit+1},cb);
-    }
-
-    protected onECh=(e:any)=>
-    {
-        const {target}:{target:HTMLInputElement}=e;
-        this.search=target.value;
-        this.prepItems();
-        this.emit();
-    }
-
-    private doBlur=():boolean=>
-    {
-        if (!this.ndWrap) {
-            return false;
-        };
-        const efocus=getFocusElement();
-        const contains=efocus && (this.ndWrap as HTMLElement).contains(efocus);
-        if(contains)
-        {
-            eventFire("blur",efocus as HTMLElement);
-            return true;
-        }
-
-        return false;
-    }
-
-    protected hSWKeyDown=(e:React.KeyboardEvent<HTMLDivElement>)=>
-    {
-        const key=toStr(e.key).toLowerCase().trim();
-        const {focus}=this.state;
-        
-        const findFocusOrSelect=()=>{
-            let elems:any=this.nDropDown.querySelector('.focus');
-            if(!elems || elems.length<1) {
-                elems=this.nDropDown.querySelector('.selected');
-            }
-            return elems;
-        };
-
-        const findNext=(el:any)=>{
-            if (el) {
-                el = el.nextElementSibling;
-            } else {
-                el = this.nDropDown.querySelector(".SelectItems .SelectItem");
-            }
-
-            while (el) {
-                if (!hasClass(el, "disabled") && el.style.display != "none") {
-                    return el;
-                }
-                el = el.nextElementSibling;
-            }
-            return null;
-        }
-
-        const findPrev=(el:any)=>
-        {
-            if (el) {
-                el = el.previousElementSibling;
-            } else {
-                el = this.nDropDown.querySelector(".SelectItems .SelectItem");
-            }
-
-            while (el) {
-                if (!hasClass(el, "disabled") && el.style.display != "none") {
-                    return el;
-                }
-                el = el.previousElementSibling;
-            }
-            return null;
-        }
-        
-        if(key==='enter')
-        {
-            if(focus)
-            {
-                const li:HTMLLIElement|undefined=findFocusOrSelect();
-                if(li){
-                    e.preventDefault();
-                    triggerClick(li);
-                    this.setState({focus:false});                    
-                }
-                return;
-            }
-            //triggerClick(this.ndWrap); // do not
-        }
-        else if(key==='backspace')
-        {
-            if(this.search==="" && this.values.length>0 && this.isMultiple())
-            {
-                const dataValue=this.values[this.values.length-1];
-                if(this.valuesRem(dataValue))
-                {
-                    //this.synSelectValues();
-                    this.prepItems();
-                    this.emit(this.callPropsChange);
-                }
-            }
-        }
-        else if(key==='arrowdown' || key==='arrowup')
-        {
-            let next=findFocusOrSelect();
-            classRemove(next,'focus');
-            next=key==='arrowdown'?findNext(next):findPrev(next);
-            if(next){
-                let t=this.ndTgDrop.querySelector('.focus');
-                classRemove(t,'focus');
-                classAdd(next,'focus');
-                elInScrollView(this.nDropDown,next);
-            }
-            e.preventDefault();            
-        }
-        else if(['esc','escape'].indexOf(key)>=0 && focus)
-        {
-            triggerClick(this.ndWrap);
-        }
-        else if(!focus) {
-            triggerClick(this.ndWrap);
-        }
-        return false;
-    }    
-
-    protected onItemClick=(dataValue:string|number)=>
-    {        
-        
-        const value=toStr(dataValue).toString().trim();
-
-        if(this.isMultiple())
-        {
-            if(this.values.indexOf(value)<=-1)
-            {                  
-                this.valuesAdd(value);
-                //this.synSelectValues();
-                this.search=""; //clear search
-                this.prepItems();
-                this.emit(this.callPropsChange);
-            }
-        }
-        else {         
-            if(this.values.indexOf(value)<=-1)
-            {
-                this.values=[]; 
-                this.places=[];
-                this.valuesAdd(value);
-                //this.synSelectValues();
-                this.search=""; //clear search
-                this.prepItems();
-                this.emit(this.callPropsChange);
-            }
-        }
-    }
-
-    protected callPropsChange=()=>
-    {
-        if(!this.ndSelect || typeof this.props.onChange!=='function') return;
-
-        const multi=this.isMultiple();
-        let data:any=[];
-        let values=this.values.slice(0);
-        const selectize=values.length>0;
-        if(multi)
-        {
-            for(let i=0; i<this.values.length; i++)
-            {
-                const idValue=this.values[i];
-                const iof=this.valueRef.indexOf(idValue);
-                data.push({...this.options[iof]});
-            }
-        }
-        else {
-            const idValue=this.values[0];
-            const iof=this.valueRef.indexOf(idValue);
-            data.push({...this.options[iof]});
-        }
-        const e:ISelectValueTarget={
-            target:{
-                name:this.ndSelect.name,
-                value:multi?values:(values[0]||'')
-            }
-        };
-        (e as any).target.data=selectize?(multi?data:data[0]):undefined;
-        (e as any).currentTarget={...e.target};
-        (e as any).preventDefault=function(){};
-        typeof this.props.onChange==="function"?this.props.onChange(e as any):null;
-    }
-
-    protected hSWClick=(e:React.MouseEvent)=>
-    {
-        let toFocus:boolean=false;          
-        const findNdCtrl=()=>
-        {
-            const target:HTMLElement=e.target as any;            
-            const clickSelCtr=(this.ndSelCtr && this.ndSelCtr.contains(target));
-            let t:boolean=clickSelCtr &&
-                 (
-                     hasClass(target,'SLRem')
-                     || hasClass(target,'SLRemDo')
-                 )
-                ;            
-            return t;
-        };
-        const findParenNode=function(el:HTMLElement,targetClass:string,sibling:number,maxSibling:number):HTMLElement|null
-        {
-            const tagName=el.tagName.toString().toLowerCase();
-            if(tagName==='body') return null;
-
-            if(hasClass(el,targetClass)) return el;
-
-            if(el.parentNode) 
-            {                
-                sibling++;
-                if(maxSibling>0 && sibling>=maxSibling) return null;
-
-                return findParenNode(el.parentNode as HTMLElement,targetClass,sibling,maxSibling);
-            }
-            return null;
-        }
-        
-        toFocus=!this.state.focus;
-        const clickTgRem=(this.ndTgRem && this.ndTgRem.contains(e.target));
-        let clickSelCtr=findNdCtrl();            
-        const prefend=clickTgRem || clickSelCtr;
-        const isRmDo=hasClass(e.target as HTMLElement,'SLRemDo');
-        if(isRmDo)
-        {
-            const node=findParenNode(e.target as HTMLElement,'SelectLabel',0,4);
-            const dataValue=elAttr(node,'data-value');                
-            if(node && dataValue && this.valuesRem(dataValue))
-            {
-                //this.synSelectValues();
-                this.prepItems();
-                this.emit(this.callPropsChange);
-            }
-        }
-        if(prefend)
-        {
-            e.preventDefault();                
-            return;
-        }
-        this.setState({focus:!this.state.focus},toFocus?this.ckInpFocused:undefined); //toggle focus
-               
-    }
-
-    protected onClickOutside=(e:MouseEvent)=>
-    {
-        const clickWrap=(this.ndWrap && this.ndWrap.contains(e.target));
-        const clickTgRem=(this.ndTgRem && this.ndTgRem.contains(e.target));
-        const clickDropDown=(this.nDropDown && this.nDropDown.contains(e.target));
-        const clickSelCtr=(this.ndSelCtr && this.ndSelCtr.contains(e.target));
-        //console.log('clickOutside ',this.props.name,{clickWrap,clickTgRem,clickDropDown,clickSelCtr});
-        if(clickDropDown)
-        {
-        }
-        else if(clickTgRem)
-        {
-            if(this.valuesRem())
-            {
-                //this.synSelectValues();
-                this.prepItems();
-                this.emit(this.callPropsChange);
-            }
-            return;
-        }
-        if(!clickWrap)
-        {
-            if(this.state.focus) 
-            {
-                this.setState({focus:false});
-            }
-        }      
-    }
-
-    protected updateCtrSize=()=>
-    {
-        const view:HTMLElement=this.ndWrap as HTMLElement;
-        const child:HTMLElement=this.ndSelBox as HTMLElement;
-        if(view && child)
-        {
-            if(this.isMultiple())
-            {
-                child.style.maxWidth=`${view.offsetWidth}px`;
-            }
-            else {
-                (child.style as any).maxWidth=null;
-            }
-        }
-    }
-
-    protected bodyClReg=()=>{
-        if(this.clBody) return;
-        window.addEventListener("click",this.onClickOutside);
-        this.clBody=true;
-    }
-
-    protected bodyClUnReg=()=>
-    {
-        if(!this.clBody) return;
-        window.removeEventListener("click",this.onClickOutside);
-        this.clBody=false;
-    }
-
-    componentDidMount()
-    {
-        this.bodyClReg();
-        window.addEventListener("resize",this.updateCtrSize);
-    }
-
-    componentWillUnmount()
-    {
-        this.bodyClUnReg();
-        window.removeEventListener("resize",this.updateCtrSize);
-    }
-
-    componentDidUpdate(props:P)
-    {
-        const satu=isEqual(props.value,this.props.value);
-        const dua=isEqual(props.multiple,this.props.multiple);
-        const tiga=isEqual(props.options,this.props.options);
-        const empat=props.loading===this.props.loading;        
-
-        const eka=isEqual(toArrayString(props.value),toArrayString(this.props.value));
-
-        const sama=satu && dua && tiga && empat && eka;
-        if(!sama)
-        {
-            if(!satu || !dua || !tiga || !eka)
-            {
-                this.prepValues();
-                this.prepOptions();
-                this.prepItems();
-                this.prepPlaces();
-            }               
-            this.emit();
-            return;
-        }   
-        this.updateCtrSize();
-       
-    }
-
-    render()
-    {
-        const {focus}=this.state;
-        const {multiple,loading}=this.props;
-        const props=this.props;
-        const selProps:any={};
-        selProps.name=props.name;
-        selProps.id=props.id?props.id:selProps.name;
-
-        if(!multiple)
-        {
-            selProps.value=toStr(this.values[0]);
-        }
-        else 
-        {
-            selProps.multiple=true;
-        }
-
-        const inputProps:any={
-            className:"SelectInput",
-        };
-        if(this.values.length<1 && !focus)
-        {
-            inputProps.placeholder=props.placeholder?props.placeholder:'Pilihan';
-            inputProps.className=inputProps.className+" withPlaceholder";
-        }
-        
-        return (
-            <div className={`Select ${multiple?'multiple':'single'} ${focus?'focus':''}`}>
-                <select ref={fn=>this.ndSelect=fn} {...selProps}>{this.selectOptions}</select>
-                <div ref={fn=>this.ndWrap=fn} className="SelectWrap" 
-                    onClick={this.hSWClick}
-                    onKeyDown={this.hSWKeyDown}
-                    >                       
-                    <div ref={fn=>this.ndSelBox=fn} className="SelectBox">
-                        <div ref={fn=>this.ndSelCtr=fn} className="SelectControls">
-                            {this.places}
-                            <input ref={fn=>this.ndInput=fn} spellCheck="false" onInput={this.onECh} value={this.search} {...inputProps}/>
-                        </div>
-
-                        <div className="SelectArrows">
-                            {(!multiple && this.values.length>0) &&
-                            <span ref={fn=>this.ndTgRem=fn} className="SelectArrow SelectArrowRemove">
-                                <CloseSvg />
-                            </span>
-                            }
-                            <span ref={fn=>this.ndTgDrop=fn} className="SelectArrow SelectArrowDropDown"></span>
-                        </div>
-
-                    </div>
-
-                    
-                    <div className="SelectDropBox">
-                        <div ref={fn=>this.nDropDown=fn} className="SelectDropDown">
-                            <ul className="SelectItems">
-                                {this.dropItems}
-                            </ul>
-                        </div>
-                    </div>
-                    
-                </div>
-
-                {loading && <div className="SelectLoading"></div>}
-            </div>
-        );        
-    }
-}
-
-export {Select}
+export default Select;

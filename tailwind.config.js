@@ -1,11 +1,11 @@
-const colors = require('tailwindcss/colors');
 const twColors = require("tailwindcss/colors");
 
 module.exports = { 
     mode:"jit",
     content: [
         './test/**/*.{js,ts,tsx}',
-        './test/zTemplate.html',
+        './src/**/*.{ts,tsx}',
+        './test/zIndex.html',
     ],       
     theme: {       
         extend : {           
@@ -40,5 +40,7 @@ module.exports = {
         extend: {},
         width: ["responsive", "hover", "focus"]
     },
-    plugins: [],
+    plugins: [
+        require("./src/tailwind.plugin") // default style
+    ],
 }

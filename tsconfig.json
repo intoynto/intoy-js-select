@@ -2,9 +2,11 @@
     "compilerOptions": {
         "target": "ES2015",
         "module": "ESNext",
-        "moduleResolution": "node",        
+        "moduleResolution": "node",
         "lib": [
-            "DOM"
+            "DOM",
+            "DOM.Iterable",
+            "ESNext",
         ],
         "downlevelIteration": true,
         "allowJs": true,
@@ -14,14 +16,16 @@
         "strict": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "removeComments": true,
-        "sourceMap": true,
-        "declaration": true,
-        "outDir": "./dist",
+        "isolatedModules": true,
         "jsx": "react",
-    },
+        
+        "outDir": "./dist",        
+        "noEmit": false,
+        "noEmitOnError": true,
+        "declaration": true,
+    },   
     "include": [
-        "./src/**/*"
+        "./src/index.tsx"
     ],
     "exclude": [
         "node_modules",

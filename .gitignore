@@ -2,7 +2,7 @@
 vendor/
 composer.lock
 
-# Dependency directories
+# js directories
 node_modules/
 jspm_packages/
 
@@ -15,10 +15,34 @@ jspm_packages/
 yarn.lock
 yarn-error.log
 
-
 # Gatsby files
 .cache/
 
 
-# other file
-.noinfo
+# aplication un tracking
+dist
+_cache
+_data
+_server_install
+_server_remote
+_backup_db
+_php_source/*.rar
+_php_source/*.zip
+php_source/*.rar
+php_source/*.zip
+
+assets/web
+assets/vendors/font-awesome-4.7.0
+assets/vendors/font-open-sans
+assets/vendors/font-poppins
+assets/vendors/font-roboto
+assets/vendors/*.rar
+assets/vendors/*.zip
+assets/manifest.json
+assets/asrip/**
+assets/*.rar
+assets/*.zip
+arsip
+
+
+_thumb/**
