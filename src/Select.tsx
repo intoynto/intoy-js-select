@@ -2,7 +2,6 @@ import React from "react";
 import { ISelectProps, ISelectState, Ioption } from "./types";
 import {toArrayString, isEqual, generateOptions, random_string, getFocusElement, toStr} from "./utils";
 import DropDown from "./DropDown";
-import { info } from "autoprefixer";
 
 
 class Select<P extends ISelectProps,S extends ISelectState> extends React.Component<P,S>
@@ -69,7 +68,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         return true;
     }  
 
-    protected callChange=()=>
+    protected callChange=():boolean=>
     {
         if(typeof this.props.onChange==='function')
         {
@@ -100,7 +99,9 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             };            
 
             this.props.onChange(e);  
+            return true;
         }
+        return false
     }      
 
     protected callConfirmChange=(value:string,method:"add"|"delete"):boolean=>
@@ -163,6 +164,29 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         }
 
         return yes;
+    }
+
+    protected syncCallChange=(cb?:()=>void)=>
+    {
+        const callCB=()=>{
+            if(typeof cb==='function') cb();
+        };
+
+        this.forceUpdate(()=>
+        {
+            if(this.callChange())
+            {
+                const prep=this.prepValues();
+                if(prep){ 
+                    this.forceUpdate(callCB);
+                    return;
+                }
+                callCB();
+            }
+            else {
+                callCB();
+            }
+        });
     }
     
 
@@ -249,7 +273,11 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                     {   
                         if(this.callConfirmChange(opt.__id,"add"))
                         {
-                            this.setState({label:opt.__id,focus:false},this.callChange);                            
+                            this.syncCallChange(()=>
+                            {
+                                const focus=this.props.multiple!==undefined && this.props.multiple!==null?this.props.multiple:false;
+                                this.setState({label:opt.__id,focus},this.callChange);                            
+                            });
                         }
                     }
                 }
@@ -265,6 +293,8 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                 if(childs.length>0)
                 {
                     let i=0, j=0;
+                    let focusFirst:boolean=false;
+                    let selectFist:boolean=false;
                     let focusIndex=0;
                     let selectedIndex=0;
                     let foundFocus:boolean=false;
@@ -276,14 +306,36 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                         const hsel=c.classList.contains('selected');
                         if(hfocus)
                         {
-                            focusIndex=j;
+                            if(is_down)
+                            {
+                                focusIndex=j;
+                            }
+                            else {
+                                if(!focusFirst)
+                                {
+                                    focusFirst=true;
+                                    focusIndex=j;
+                                }
+                            }
                             foundFocus=true;
                         }
+
                         if(hsel)
                         {
-                            selectedIndex=j;
+                            if(is_down)
+                            {
+                                selectedIndex=j;
+                            }
+                            else {
+                                if(!selectFist)
+                                {
+                                    selectFist=true;
+                                    selectedIndex=j;
+                                }
+                            }
                             foundSelect=true;
-                        }                        
+                        }      
+
                         c.classList.remove(cls);
                         j++;
                     } 
@@ -313,8 +365,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             {
                 if(this.callConfirmChange(this.selectedValues[this.selectedValues.length-1],"delete"))
                 {
-                    // this.selectedValues.pop(); // remove last element // ------------------------------------
-                    this.setState({label:''});
+                    this.setState({label:''},this.syncCallChange);
                 }                
             }
         }
@@ -325,8 +376,8 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         if(this.selectedValues.indexOf(opt.__id)>=0) return;
 
         if(this.callConfirmChange(opt.__id,"add"))
-        {
-            this.setState({label:opt.__label},this.callChange);
+        {            
+            this.setState({label:opt.__label},this.syncCallChange);
         }    
     }
 
@@ -337,7 +388,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
        if(this.callConfirmChange(opt.__id,"delete"))
        {
-            this.forceUpdate(this.callChange);
+            this.syncCallChange();
        }
     }
 
@@ -351,8 +402,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             const opt:Ioption=this.options[iof];
             if(this.callConfirmChange(opt.__id,"delete"))
             {
-                // this.selectedValues.splice(this.selectedValues.length-1,1); ------------------------------------
-                this.forceUpdate(this.callChange);
+                this.syncCallChange();
             }
         }
     }
@@ -382,6 +432,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
         const harus_update1=(!sama_props || !sama_value);        
         const harus_update2=!sama_load;
+
 
         if(harus_update1)
         {

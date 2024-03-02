@@ -15,8 +15,9 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected gState: (props: P) => S;
     protected athProps: (props?: P) => void;
     protected prepValues: (props?: P) => boolean;
-    protected callChange: () => void;
+    protected callChange: () => boolean;
     protected callConfirmChange: (value: string, method: "add" | "delete") => boolean;
+    protected syncCallChange: (cb?: () => void) => void;
     protected onInputFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
     protected onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     protected onInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;

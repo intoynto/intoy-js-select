@@ -1,9 +1,8 @@
 import { ChangeEvent } from "react";
 export type IAnyEvent = ChangeEvent<HTMLInputElement>;
-export type ISelectProps = {
+export type ISelectBaseProps = {
     id?: string;
     name: string;
-    options?: any[];
     fieldid: string;
     fieldname: string;
     multiple?: boolean;
@@ -12,6 +11,9 @@ export type ISelectProps = {
     onFieldName?: (e: any) => string;
     onConfirmChange?: (from: any, to: any, multipe: boolean) => boolean;
     placeholder?: string;
+};
+export type ISelectProps = ISelectBaseProps & {
+    options?: any[];
     loading?: boolean;
 };
 export type ISelectState = {
@@ -20,6 +22,19 @@ export type ISelectState = {
     keyword: string;
     label: string;
     emit: number;
+};
+export type ISelecListProps = ISelectBaseProps & {
+    url: string;
+    params?: any;
+    useCache?: boolean;
+    sortField?: string;
+    loader?: (url: string, params?: any) => Promise<Response>;
+    onSort?: (options?: any[], sortField?: string) => void;
+    onResponse?: (res: any) => void;
+};
+export type ISelectListState = {
+    loading: boolean;
+    options: any[];
 };
 export type Ioption = {
     [p: string]: any;

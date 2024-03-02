@@ -1,8 +1,11 @@
 const path=require("path");
 const TerserWebpackPlugin=require("terser-webpack-plugin");
+const clean=require("./web.dev/clean");
 
 module.exports=function(env,args)
 {
+    clean.doRemoveFolder("./dist");// remove dir
+    
     const dev={
         MODUL_NAME:'select',
         DECLARE_MODUL_NAME:"intoy-select",

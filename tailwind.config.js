@@ -6,6 +6,8 @@ module.exports = {
         './test/**/*.{js,ts,tsx}',
         './src/**/*.{ts,tsx}',
         './test/zIndex.html',
+
+        "./node_modules/react-router/dist/*.js", // react-router
     ],       
     theme: {       
         extend : {           
@@ -15,6 +17,8 @@ module.exports = {
                 cyan: twColors.cyan,
                 teal: twColors.teal,
                 indigo: twColors.indigo,
+
+                primary:twColors.blue,
             }
         }
         /*
@@ -41,6 +45,7 @@ module.exports = {
         width: ["responsive", "hover", "focus"]
     },
     plugins: [
-        require("./src/tailwind.plugin") // default style
+        require("./web.dev/tailwind.select.plugin"),// default select style
+        require("./web.dev/tailwind.dev"), // dev style 
     ],
 }

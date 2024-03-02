@@ -1,5 +1,4 @@
 import { default as Select } from "./Select";
 import { default as SelectList } from "./SelectList";
 export { Select, SelectList };
-export type { ISelectProps, ISelectState } from "./types";
-export type { IselectListProps, IselectListState } from "./SelectList";
+export type { ISelectProps, ISelectState, ISelecListProps, ISelectListState } from "./types";

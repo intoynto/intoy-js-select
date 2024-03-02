@@ -1,23 +1,9 @@
 import React from "react";
-import {ISelectProps} from "./types";
-import Select from "./Select";
+import {ISelecListProps,ISelectListState} from "./types";
 import { isEqual } from "./utils";
+import Select from "./Select";
 
-type IselectListPropsExtend=Omit<ISelectProps,"options" | "loading">
-
-export type IselectListProps = IselectListPropsExtend  & {
-    url:string
-    params?:any
-    useCache?:boolean
-    sortField?:string
-}
-
-export type IselectListState = {
-    loading:boolean
-    options:any[]
-}
-
-class SelectList<P extends IselectListProps,S extends IselectListState> extends React.Component<P,S>
+class SelectList<P extends ISelecListProps,S extends ISelectListState> extends React.Component<P,S>
 {
     constructor(props:P)
     {
@@ -54,28 +40,59 @@ class SelectList<P extends IselectListProps,S extends IselectListState> extends 
             closeLoad();
             return;
         }
-        
 
-        fetch(url,{
-            headers:{
-                'accent':'text/json, application/json',
-            },
-        })
+        let promise:Promise<Response>|undefined=undefined;
+        if(typeof props.loader==='function')
+        {
+            promise=props.loader(url,props.params);
+        }
+
+        if((!promise) || !(promise instanceof Promise))
+        {
+            promise=fetch(url,{
+                headers:{
+                    'accent':'text/json, application/json',
+                },
+            });
+        }
+       
+        promise
         .then((res:Response)=>{ return res.json() })
-        .then((res:any)=>{
+        .then((res:any)=>
+        {
+            // callable on response
+            if(typeof props.onResponse==='function')
+            {
+                props.onResponse(res);
+            }
+
             const options:any[]=Array.isArray(res)?res
                                 :typeof res==='object' && Array.isArray(res.records)?res.records
                                 :[];
-            this.prepSort(options);
+            if(typeof props.onSort==='function')
+            {
+                // call props on sort
+                props.onSort(options,props.sortField);
+            }
+            else 
+            {
+                // manual handled sort
+                this.prepSort(options);
+            }            
+
             this.setState({loading:false,options});
+        })
+        .catch((err:any)=>{
+            console.error("Catch load from : ",url);
+            this.setState({loading:false});
         });
+       
     }
 
     protected prepSort=(options:any[])=>
     {
         if(Array.isArray(options) && options.length>0)
         {
-
             const props=this.props;
             let sortField=(props.sortField||'').toString().trim();
             if(sortField.length>0)
