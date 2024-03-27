@@ -1,6 +1,6 @@
 {
   "name": "intoy-select",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "main": "dist/select.js",
   "typings": "dist/index.d.ts",
   "license": "MIT",

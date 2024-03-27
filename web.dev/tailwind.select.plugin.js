@@ -181,19 +181,7 @@ const forms=plugin.withOptions(function()
                 'border-radius':`${defBorderRadius}`,
                 'transition': 'all .2s cubic-bezier(0.5, 0, 0, 1.25), opacity .15s ease-out',
             },
-        });
-
-        // select box
-        rules.push({
-            class:'.SelectBox',
-            styles:{
-                'padding-left':spacing[2],
-                'position':'relative',
-                'z-index':'1',
-                'display':'flex',
-                'gap':'2px',
-            },
-        });
+        });       
 
         rules.push({
             class:'.SelectDropDown',
@@ -276,19 +264,13 @@ const forms=plugin.withOptions(function()
                 '.SelectArrowDropDown:after':{
                     'transform':'rotate(225deg)',
                 },
-            },
-        });
-
-        // select open
-        rules.push({
-            class:'.Select.open',
-            styles:{
                 '.SelectDropDown':{
                     'opacity':'1',
                     'visibility':'visible',
-                },               
+                },  
             },
-        });           
+        });
+              
 
         // select single
         rules.push({

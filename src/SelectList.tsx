@@ -3,6 +3,31 @@ import {ISelecListProps,ISelectListState} from "./types";
 import { isEqual } from "./utils";
 import Select from "./Select";
 
+function serialize(obj?:any,key?:any,list?:any[]){
+    list=list || [];    
+    if(typeof(obj)==="object"){
+        for(let idx in obj){
+            const val=obj[idx];
+            if(val!==null && val!==undefined){
+                serialize(val,key?key+'['+idx+']':idx,list);
+            }           
+        }
+    }
+    else{
+        if(typeof obj==='string')
+        {
+            if(obj.toString().trim().length>0)
+            {
+                list.push(key+='='+encodeURIComponent(obj));
+            }
+        }
+        else {
+            list.push(key+='='+encodeURIComponent(obj));
+        }
+    }
+    return list.join('&');
+}
+
 class SelectList<P extends ISelecListProps,S extends ISelectListState> extends React.Component<P,S>
 {
     constructor(props:P)
@@ -49,6 +74,18 @@ class SelectList<P extends ISelecListProps,S extends ISelectListState> extends R
 
         if((!promise) || !(promise instanceof Promise))
         {
+            const is_params=props.params && (Array.isArray(props.params) || typeof props.params==='object');
+            if (is_params)
+            {
+                let ser=serialize(props.params);
+                if(ser.length>0)
+                {
+                    if(url.indexOf("?")<0){
+                        url+="?";
+                    }
+                    url+=ser;
+                }
+            }
             promise=fetch(url,{
                 headers:{
                     'accent':'text/json, application/json',
