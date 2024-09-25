@@ -1,6 +1,7 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import { ISelectProps, ISelectState, Ioption } from "./types";
-import {toArrayString, isEqual, generateOptions, random_string, getFocusElement, toStr} from "./utils";
+import {toArrayString, isEqual, generateOptions, random_string, getFocusElement, toStr, getDropDownContainer} from "./utils";
 import DropDown from "./DropDown";
 
 
@@ -17,6 +18,9 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     protected _lsoutside:boolean=false;
     protected _lsenter:boolean=false;
 
+    protected isMobile:boolean=false;
+    protected cmbSelect:any;
+
     constructor(props:P)
     {
         super(props);
@@ -24,6 +28,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
         this._id=random_string();
         this._id_options=`${this._id}_option`;
 
+        this.isMobile=/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         this.athProps(props);
         this.prepValues(props);
         this.state=this.gState(props);
@@ -191,8 +196,15 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     
 
     protected onInputFocus=(e:React.FocusEvent<HTMLInputElement>)=>
-    {
+    {  
         this.setState({focus:true,open:true});
+    }
+
+    // onlick open popup mobile version
+    protected onClPopMobile=(e?:React.MouseEvent)=>
+    {
+        if(e) e.preventDefault();
+        this.setState({open:true,focus:true});
     }
 
     protected onInputChange=(e:React.ChangeEvent<HTMLInputElement>)=>
@@ -231,9 +243,18 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
         if(!(e.target instanceof HTMLElement)) return;
 
+
         const target:HTMLElement=e.target as HTMLElement;
-        const closest=target.closest(`#${this._id}`);
-        const must_close_focus=!closest;
+        let closest:any=target.closest(`#${this._id}`);    
+
+        if(this.isMobile)
+        {
+            closest=this.ndDrobBox && (this.ndDrobBox===target || this.ndDrobBox.contains(target));            
+        }
+
+        let must_close_focus:any=!closest;              
+
+        //console.log('prevent click mob vers most close focus',must_close_focus);
         if(must_close_focus)
         {            
             if(this.state.focus || this.state.open)
@@ -377,7 +398,14 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
 
         if(this.callConfirmChange(opt.__id,"add"))
         {            
-            this.setState({label:opt.__label},this.syncCallChange);
+            const nState:S=this.state;
+            nState.label=opt.__label;
+            if(this.isMobile)
+            {
+                nState.open=false;
+                nState.focus=false;
+            }
+            this.setState(nState,this.syncCallChange);
         }    
     }
 
@@ -415,7 +443,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
     }
 
     componentDidMount()
-    {
+    {        
         window.addEventListener("mousedown",this.hideOutSideClick);
     }
 
@@ -445,6 +473,44 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             this.forceUpdate();
         }
     }
+
+    protected rdrPortalDropDown=()=>
+    {
+        if(this.isMobile)
+        {
+            const {focus,open,keyword}=this.state;
+
+            return ReactDOM.createPortal(
+                <div className={`selectDropDownOutline ${this.isMobile?'mobile':''} ${focus?'focus':''} ${open?'open':''}`}>{this.rdrDropDown()}</div>
+                ,getDropDownContainer());
+        }
+        return this.rdrDropDown();
+    }
+
+    protected rdrDropDown=()=>
+    {
+        const props=this.props;
+        const {focus,open,keyword}=this.state;
+        return (<React.Fragment>
+            <div className={`dropBoxOverlay `}></div>
+            <div ref={fn=>this.ndDrobBox=fn} className={`SelectDropBox`}>                   
+                <DropDown 
+                    name={props.name}
+                    id_options={this._id_options}
+
+                    options={this.options} 
+                    keyword={keyword}
+                    onBlur={this.onInputBlur}
+                    
+                    onClickSelect={this.onClickSelect}
+                    selectedValues={this.selectedValues}
+
+                    multiple={props.multiple}
+                    
+                />
+            </div> 
+        </React.Fragment>);        
+    }
     
 
     render()
@@ -463,14 +529,20 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
             className:`SelectInput ${focus?'show':'hide'}`,
             value:keyword,
             onChange:this.onInputChange,
-            onFocus:this.onInputFocus,
-            onBlur:this.onInputBlur,
+            //onFocus:this.onInputFocus,
+            //onBlur:this.onInputBlur,
             onKeyDown:this.onInputKeyDown,
-            spellCheck:"false",
+            spellCheck:"false",            
         };       
 
+        if(!this.isMobile)
+        {
+            inputProps.onFocus=this.onInputFocus;
+            inputProps.onBlur=this.onInputBlur;
+        }
+
         return (
-            <div ref={fn=>this.ndSelect=fn} id={this._id} className={`Select ${multiple?'multiple':'single'} ${focus?'focus':''} ${open?'open':''}`}>                
+            <div ref={fn=>this.ndSelect=fn} id={this._id} className={`Select ${multiple?'multiple':'single'} ${focus?'focus':''} ${open?'open':''}`}>                                
                 <div className={`SelectWrap`}>
                     <div className={`SelectBox`}>
                         <div className={`SelectControls`}>
@@ -484,7 +556,8 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                                     return <div className={`SelectLabel ${show_label?'show':'hide'}`}><div className="SelectLabelVal" dangerouslySetInnerHTML={{__html:opt.__html}} />{multiple && <div onClick={(e:React.MouseEvent)=>{ e.preventDefault(); this.onClickRem(opt)}} className="SelectLabelValRem"><CloseSVG /></div>}</div>
                                 }) 
                             }
-                            <input ref={fn=>this.ndInput=fn} {...inputProps}  />
+                            {(!this.isMobile) && <input ref={fn=>this.ndInput=fn} {...inputProps}  />}
+                            {(this.isMobile) && <div onClick={this.onClPopMobile} className={inputProps.className}>&nbsp;</div>}
                         </div>
                         <div className={`SelectArrows`}>
                             {(single && is_selected) && <span className={`SelectArrow SelectArrowRemove`} onClick={this.onClickRemLast}><CloseSVG /></span>}
@@ -493,22 +566,7 @@ class Select<P extends ISelectProps,S extends ISelectState> extends React.Compon
                     </div>
                     {loading && <div className="SelectLoading"></div>}
                 </div>    
-                <div ref={fn=>this.ndDrobBox=fn} className={`SelectDropBox`}>
-                    <DropDown 
-                        name={props.name}
-                        id_options={this._id_options}
-
-                        options={this.options} 
-                        keyword={keyword}
-                        onBlur={this.onInputBlur}
-                        
-                        onClickSelect={this.onClickSelect}
-                        selectedValues={this.selectedValues}
-
-                        multiple={props.multiple}
-                        
-                    />
-                </div>            
+                {this.rdrPortalDropDown()}            
             </div>
         );
     }

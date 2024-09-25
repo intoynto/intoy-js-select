@@ -9,6 +9,7 @@ module.exports=function(env,args)
     console.log("wp.mode ",mode," env ",env);
 
     const conf={
+        mode,
         entry:"./test/index.tsx",
         output:{
             chunkFilename: '[name].js',

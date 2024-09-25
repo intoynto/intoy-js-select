@@ -11,6 +11,8 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected options_b: string[];
     protected _lsoutside: boolean;
     protected _lsenter: boolean;
+    protected isMobile: boolean;
+    protected cmbSelect: any;
     constructor(props: P);
     protected gState: (props: P) => S;
     protected athProps: (props?: P) => void;
@@ -19,6 +21,7 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     protected callConfirmChange: (value: string, method: "add" | "delete") => boolean;
     protected syncCallChange: (cb?: () => void) => void;
     protected onInputFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
+    protected onClPopMobile: (e?: React.MouseEvent) => void;
     protected onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     protected onInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
     protected hideOutSideClick: (e: MouseEvent) => void;
@@ -30,6 +33,8 @@ declare class Select<P extends ISelectProps, S extends ISelectState> extends Rea
     componentDidMount(): void;
     componentWillUnmount(): void;
     componentDidUpdate(prev: Readonly<P>, prevState: Readonly<S>, snapshot?: any): void;
+    protected rdrPortalDropDown: () => React.JSX.Element;
+    protected rdrDropDown: () => React.JSX.Element;
     render(): React.JSX.Element;
 }
 export default Select;

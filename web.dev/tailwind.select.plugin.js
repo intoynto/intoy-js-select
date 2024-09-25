@@ -161,7 +161,9 @@ const forms=plugin.withOptions(function()
                 'position':'absolute',
                 'width':'100%',
             },
-        })
+        });
+
+        
 
         // default ring style
         rules.push({
@@ -200,6 +202,8 @@ const forms=plugin.withOptions(function()
                 'background-color':'#fff',
             },
         });
+
+        
 
         rules.push({
             class:'.SelectItem',
@@ -270,7 +274,75 @@ const forms=plugin.withOptions(function()
                 },  
             },
         });
-              
+
+        // dropbox mobile
+        rules.push({
+            class:'.selectDropDownOutline',
+            styles:
+            {
+                'position':'fixed',
+                'left':'0',
+                'top':'0',
+                'right':'0',
+                'bottom':'0',
+                'background-color':'rgba(0,0,0,0.5)',   
+                'visibility':'hidden',     
+                'z-index':'10',
+                '.SelectDropBox':{
+                    'position':'absolute',
+                    'width':'80%',
+                    'height':'72%',
+                    'top':'9.5%',
+                    'left':'5%',
+                    'background-color':'rgb(50,50,50)',
+                    'border-radius':'0.375rem',
+                    'visibility':'hidden',     
+                },
+                '.SelectDropDown':{
+                    'position':'relative',
+                    'visibility':'hidden',
+                    'opacity':'0',
+                    'transform':'scale(1) translateY(0)', 
+                    'max-height':'100%',
+                    'background':'transparent',
+                    'overflow-y':'scroll',                    
+                    'appearance':'none',
+                    'outline':'none',   
+                    'box-shadow':'none',  
+                    'border':'none',  
+                    'transition':'none',
+                },
+                '.SelectItem':{
+                    'color':'rgb(160,160,160)',
+                    'padding-left':'12px',                    
+                    'padding-top':'12px',                    
+                    'padding-bottom':'12px',      
+                    'font-size':'22px',
+                    '&:not(:first-child)':{
+                        'border-color':'rgb(87,87,87)',
+                        'border-top-width':'1px',
+                        'border-bottom-width':'0',
+                    },    
+                    '&.selected':{
+                        'color':'white',
+                    },
+                },              
+            },
+        });
+
+        rules.push({
+            class:'.selectDropDownOutline.open',
+            styles:{
+                'visibility':'visible',
+                '.SelectDropBox':{
+                    'visibility':'visible',
+                },
+                '.SelectDropDown':{
+                    'visibility':'visible',
+                    'opacity':'1',
+                },
+            }
+        });
 
         // select single
         rules.push({

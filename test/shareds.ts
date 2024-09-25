@@ -20,7 +20,7 @@ export const optionsWilayah:any[]=[
     {kw:18,label:'Labanu'},
     {kw:19,label:'Pontolo'},
     {kw:20,label:'Molinggapoto'},
-    /*
+    
     {kw:21,label:'Titidu'},
     {kw:22,label:'Bulalo'},
     {kw:23,label:'Moluo'},
@@ -35,6 +35,6 @@ export const optionsWilayah:any[]=[
     {kw:32,label:'Amurang'},
     {kw:33,label:'Malalayang'},
     {kw:34,label:'Manado'},
-    */
+    
     {kw:35,label:'Kalimat yang panjang digunakan untuk wrapper bagaimana model tampilan'},          
 ];

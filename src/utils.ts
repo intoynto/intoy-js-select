@@ -229,3 +229,15 @@ export function generateOptions(props:IgeneratOptionsProps):IgenerateOptionResul
         options_b:ops_b,
     };
 }
+
+export function getDropDownContainer()
+{
+    let tips=document.getElementById('select-outline-container');
+    if(tips===null)
+    {
+        tips=document.createElement('div');
+        tips.setAttribute('id','select-outline-container');
+        document.body.appendChild(tips);
+    }
+    return tips;
+}

@@ -20,4 +20,5 @@ type IgenerateOptionResult = {
     options_b: string[];
 };
 export declare function generateOptions(props: IgeneratOptionsProps): IgenerateOptionResult;
+export declare function getDropDownContainer(): HTMLElement;
 export {};

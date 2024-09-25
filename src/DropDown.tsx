@@ -23,6 +23,7 @@ class Comp<P extends IdropDownProps, S extends IdropDownState> extends React.Com
     protected onClickSelect=(e?:React.MouseEvent,opt?:Ioption)=>
     {
         if(e) e.preventDefault();
+
         if(!opt) return;
 
         if(typeof this.props.onClickSelect==='function')
@@ -43,7 +44,7 @@ class Comp<P extends IdropDownProps, S extends IdropDownState> extends React.Com
             return regexp.test(text);
         };
         
-        type ihtmlSelectProps=React.DetailedHTMLProps<React.SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>;
+        //type ihtmlSelectProps=React.DetailedHTMLProps<React.SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>;
         //type IinputProps=React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
         let idx_name:number=0;
@@ -71,7 +72,12 @@ class Comp<P extends IdropDownProps, S extends IdropDownState> extends React.Com
                         }
 
                         return (
-                            <div onClick={(e:React.MouseEvent)=>{ this.onClickSelect(e,r); }} className={`SelectItem ${selected?'selected':'' } `} data-value={`${r.__id}`} dangerouslySetInnerHTML={{__html:r.__html}} />
+                            <div 
+                                onClick={(e:React.MouseEvent)=>{ this.onClickSelect(e,r); }} 
+                                className={`SelectItem ${selected?'selected':'' } `} 
+                                data-value={`${r.__id}`}
+                                dangerouslySetInnerHTML={{__html:r.__html}}
+                            />
                         );
                     })}
                 </div>

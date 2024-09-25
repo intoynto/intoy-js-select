@@ -1,6 +1,6 @@
 {
   "name": "intoy-select",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "dist/select.js",
   "typings": "dist/index.d.ts",
   "license": "MIT",
@@ -10,8 +10,10 @@
   },
   "homepage": "https://github.com/intoynto/js-select",
   "scripts": {
-    "b": "cross-env NODE_ENV=production webpack --config webpack.config.js --mode=production",
-    "g": "cross-env NODE_ENV=development webpack serve --config webpack.config.dev.js"
+    "bl": "cross-env NODE_ENV=production webpack --config webpack.config.js --mode=production",
+    "gL": "cross-env NODE_ENV=development webpack serve --config webpack.config.dev.js",
+    "b": "webpack --config webpack.config.js --mode=production",
+    "g": "webpack serve --config webpack.config.dev.js"
   },
   "dependencies": {
     "preact": "^10.10.2"

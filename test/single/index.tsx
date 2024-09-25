@@ -48,7 +48,7 @@ class Comp<P extends Iprops,S extends Istate> extends React.Component<P,S>
     protected gState=(props?:P):S=>
     {
         return {
-            tabIndex:3
+            tabIndex:0
         } as S;
     }
 

@@ -57,7 +57,7 @@ class Comp<P extends Iprops,S extends Istate> extends React.Component<P,S>
                 </Headsub>                   
                 <Container asForm>
 
-                    <div className="flex gap-3">
+                    <div className="grid gap-3">
                         <div><input type="text" className="border border-gray-400 rounded" placeholder="Another Input" /></div>
                         <Select name="kw" fieldid="kw" fieldname="label" options={optionsWilayah} onFieldName={onFieldName} value={set_apply_value?set_apply_value:values.kw} onChange={this.onCh} placeholder="Input Single P?" />
                         <div><input type="text" className="border border-gray-400 rounded" placeholder="Another Input" /></div>
